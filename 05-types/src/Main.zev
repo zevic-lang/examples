@@ -1,0 +1,108 @@
+// struct, class, enum, interface and generic classes.
+// There is no inheritance: share behavior with interfaces and by holding other values.
+
+module Main
+
+import Zevic.Console
+import Zevic.Math
+
+// struct: a value type. Assignment copies it. == compares the fields.
+struct Point {
+    X: F64
+    Y: F64
+
+    fn Init(x: F64, y: F64) {
+        this.X = x
+        this.Y = y
+    }
+
+    fn Length() -> F64 {
+        Math.Sqrt(this.X * this.X + this.Y * this.Y)
+    }
+}
+
+// interface: a promise about methods. It may carry default implementations.
+interface Describable {
+    fn Describe() -> String
+
+    fn Banner() -> String {
+        "** ${this.Describe()} **"
+    }
+}
+
+// class: a reference type. Lower-case fields are private to the module.
+class Person : Describable {
+    name: String
+    Age: I32
+
+    fn Init(name: String, age: I32) {
+        this.name = name
+        this.Age = age
+    }
+
+    fn Describe() -> String {
+        "${this.name}, ${this.Age}"
+    }
+
+    // A method that changes this must be marked mut.
+    mut fn Birthday() {
+        this.Age += 1
+    }
+
+    static fn Anonymous() -> Person {
+        Person.New("?", 0)
+    }
+}
+
+// enum: choices that can carry data. match must cover every case.
+enum Shape : Describable {
+    Circle(F64),
+    Rect(F64, F64),
+    Empty,
+
+    fn Area() -> F64 {
+        match (this) {
+            Shape.Circle(r) => 3.14159 * r * r,
+            Shape.Rect(w, h) => w * h,
+            Shape.Empty => 0.0,
+        }
+    }
+
+    fn Describe() -> String {
+        "area ${this.Area()}"
+    }
+}
+
+// A generic class.
+class Stack<T> {
+    items: Array<T> = []
+
+    mut fn Push(x: T) { this.items.Push(x) }
+    mut fn Pop() -> Option<T> { this.items.Pop() }
+    fn Len() -> I64 { this.items.Len() }
+}
+
+fn Show(d: Describable) {
+    Console.Println(d.Banner())
+}
+
+fn Main() {
+    let p: Point = Point.New(3.0, 4.0)
+    Console.Println("length = ${p.Length()}")
+    Console.Println("same point: ${p == Point.New(3.0, 4.0)}")
+
+    mut person: Person = Person.New("Taro", 20)
+    person.Birthday()
+    Console.Println("age = ${person.Age}")
+    Show(person)
+
+    let shapes: Array<Shape> = [Shape.Circle(1.0), Shape.Rect(2.0, 3.0), Shape.Empty]
+    for (s in shapes) {
+        Show(s)
+    }
+
+    mut stack: Stack<String> = Stack.New()
+    stack.Push("a")
+    stack.Push("b")
+    Console.Println("popped = ${stack.Pop().UnwrapOr("none")}, left = ${stack.Len()}")
+}
