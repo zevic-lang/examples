@@ -1,0 +1,9 @@
+module Greeter.Util.Text
+
+fn Repeat(s: String, times: I32) -> String {
+    mut out: String = ""
+    for (i in 0..times) {
+        out = out + s
+    }
+    out
+}
