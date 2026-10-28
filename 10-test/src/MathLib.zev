@@ -1,0 +1,47 @@
+// A library package: the root module is named after the package.
+// test blocks are ignored by a normal build and run by "zevpm test".
+// Tests can see private names of their own module.
+
+module MathLib
+
+import Zevic.Test
+
+fn Add(a: I32, b: I32) -> I32 {
+    a + b
+}
+
+fn Divide(a: I32, b: I32) -> Result<I32, Error> {
+    if (b == 0) {
+        return Err(Error.New(ErrorKind.Invalid, "division by zero"))
+    }
+    Ok(a / b)
+}
+
+fn Clamp(x: I32, lo: I32, hi: I32) -> I32 {
+    if (x < lo) { return lo }
+    if (x > hi) { return hi }
+    x
+}
+
+fn firstEven(nums: Array<I32>) -> Option<I32> {
+    nums.Find((x: I32) => x % 2 == 0)
+}
+
+test "Add adds two numbers" {
+    Test.Equal(Add(1, 2), 3)
+    Test.NotEqual(Add(1, 2), 4)
+}
+
+test "Add panics on overflow" {
+    Test.Panics(() => Add(2147483647, 1))
+}
+
+test "Divide returns an error for zero" {
+    Test.Err(Divide(1, 0))
+    Test.Ok(Divide(6, 3))
+}
+
+test "firstEven is private but testable" {
+    Test.Some(firstEven([1, 3, 4]))
+    Test.None(firstEven([1, 3]))
+}

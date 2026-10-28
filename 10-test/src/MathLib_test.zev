@@ -1,0 +1,12 @@
+// Files that end in _test.zev belong to the same module and are used only by "zevpm test".
+// Use them when there are many tests.
+
+module MathLib
+
+import Zevic.Test
+
+test "Clamp keeps the value inside the range" {
+    Test.Equal(Clamp(5, 0, 10), 5)
+    Test.Equal(Clamp(-5, 0, 10), 0)
+    Test.Equal(Clamp(50, 0, 10), 10)
+}
