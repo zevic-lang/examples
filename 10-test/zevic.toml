@@ -1,0 +1,6 @@
+[package]
+name = "MathLib"
+version = "0.1.0"
+kind = "lib"
+zevic = ">=0.1"
+
