@@ -1,0 +1,70 @@
+// Error handling. Failures that can happen are returned as a Result.
+// Bugs stop the program with a Panic. There are no exceptions.
+
+module Main
+
+import Zevic.Console
+
+// A function that can fail returns Result<T, Error>.
+fn ParseAge(text: String) -> Result<I32, Error> {
+    let n: I32 = text.ToI32()?          // ? returns the Err from this function right away
+    if (n < 0 || n > 150) {
+        return Err(Error.New(ErrorKind.Invalid, "age out of range: ${n}"))
+    }
+    Ok(n)
+}
+
+// Context wraps an error with a message and keeps the original as the cause.
+fn LoadAge(text: String) -> Result<I32, Error> {
+    let age: I32 = ParseAge(text).Context("while reading the age")?
+    Ok(age)
+}
+
+// An Option becomes a Result with OkOr.
+fn FindUser(names: Array<String>, wanted: String) -> Result<I64, Error> {
+    let found: Option<I64> = names.IndexOf(wanted)
+    let index: I64 = found.OkOr(Error.New(ErrorKind.NotFound, "no user ${wanted}"))?
+    Ok(index)
+}
+
+fn Main() {
+    // Look at a Result with match.
+    match (ParseAge("42")) {
+        Ok(age) => Console.Println("age = ${age}"),
+        Err(e) => Console.Println("error: ${e.Message()}"),
+    }
+
+    // Errors have a kind and may have a cause.
+    match (LoadAge("abc")) {
+        Ok(_) => {},
+        Err(e) => {
+            Console.Println("kind = ${e.Kind().ToString()}")
+            Console.Println("message = ${e.Message()}")
+            Console.Println("full = ${e.ToString()}")
+        },
+    }
+
+    // Compare the kind to react differently.
+    match (FindUser(["ann", "bob"], "carol")) {
+        Ok(i) => Console.Println("found at ${i}"),
+        Err(e) => {
+            if (e.Kind() == ErrorKind.NotFound) {
+                Console.Println("not found, continuing")
+            }
+        },
+    }
+
+    // A default value instead of handling the error.
+    let safe: I32 = ParseAge("???").UnwrapOr(0)
+    Console.Println("safe = ${safe}")
+
+    // Unwrap panics on None / Err. Use it only when failure would be a bug.
+    let firstArg: String = ["x"].Get(0).Unwrap()
+    Console.Println("first = ${firstArg}")
+
+    // Panic stops the program with exit code 101. Assert panics when the condition is false.
+    Assert(safe == 0, "safe must be zero")
+    //   Panic("unreachable")       // would print the message, file and line, and exit 101
+    //   let a: Array<I32> = []
+    //   let x: I32 = a[0]           // Panic: index out of range
+}
