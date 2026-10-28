@@ -1,0 +1,84 @@
+// Functions, params, lambdas, closures and generics.
+// There is no overloading, no default arguments and no named arguments.
+
+module Main
+
+import Zevic.Console
+
+// The value of the last expression is the return value.
+fn Add(a: I32, b: I32) -> I32 {
+    a + b
+}
+
+// When the return type is Unit, "-> Unit" can be left out.
+fn Greet(name: String) {
+    Console.Println("Hello, ${name}!")
+}
+
+// Use return to leave early.
+fn Factorial(n: I64) -> I64 {
+    if (n <= 1) { return 1 }
+    n * Factorial(n - 1)
+}
+
+// params: the last parameter takes any number of values and arrives as an array.
+fn Sum(params nums: Array<I32>) -> I32 {
+    nums.Reduce(0, (acc: I32, x: I32) => acc + x)
+}
+
+// Parameters cannot be changed unless they are marked mut.
+fn Fill(mut a: Array<I32>, value: I32) {
+    for (i in 0..a.Len()) {
+        a[i] = value
+    }
+}
+
+// Functions are values. The type is fn(argument types) -> result type.
+fn Apply(f: fn(I32) -> I32, x: I32) -> I32 {
+    f(x)
+}
+
+// A closure keeps (and shares) the variables it uses.
+fn MakeCounter() -> fn() -> I32 {
+    mut n: I32 = 0
+    () => {
+        n += 1
+        n
+    }
+}
+
+// Generic functions. A constraint is written after the type parameter.
+fn First<T>(a: Array<T>) -> Option<T> {
+    a.Get(0)
+}
+
+fn Larger<T: Comparable>(a: T, b: T) -> T {
+    if (a.Compare(b) >= 0) { a } else { b }
+}
+
+fn Main() {
+    Greet("Zevic")
+    Console.Println("2 + 3 = ${Add(2, 3)}")
+    Console.Println("10! = ${Factorial(10)}")
+    Console.Println("Sum = ${Sum(1, 2, 3, 4)}, empty = ${Sum()}")
+
+    mut xs: Array<I32> = [1, 2, 3]
+    Fill(xs, 9)
+    Console.Println("xs[0] = ${xs[0]}")
+
+    let double: fn(I32) -> I32 = (x: I32) => x * 2
+    Console.Println("Apply = ${Apply(double, 21)}")
+
+    let next: fn() -> I32 = MakeCounter()
+    next()
+    next()
+    Console.Println("counter = ${next()}")
+
+    Console.Println("First = ${First([5, 6, 7]).UnwrapOr(-1)}")
+    Console.Println("Larger = ${Larger(3, 8)}")
+
+    // Higher-order methods take lambdas.
+    let evens: Array<I32> = [1, 2, 3, 4, 5, 6].Filter((x: I32) => x % 2 == 0)
+    let squares: Array<I32> = evens.Map((x: I32) => x * x)
+    squares.Each((x: I32) => Console.Println("square ${x}"))
+}
