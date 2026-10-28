@@ -1,0 +1,55 @@
+// Variables, types, strings and conversions.
+
+module Main
+
+import Zevic.Console
+
+fn Main() {
+    // let = cannot be reassigned. mut = can be reassigned.
+    // The type is always written. There is no implicit conversion.
+    let name: String = "Zevic"
+    let age: I32 = 1
+    mut count: I32 = 0
+    count += 1
+    count = count + 1
+
+    // Fixed-width numbers: I8 I16 I32 I64, U8 U16 U32 U64, F32 F64.
+    let big: I64 = 9000000000
+    let ratio: F64 = 0.75
+    let small: U8 = 255
+    let flag: Bool = true
+    let initial: Char = 'Z'
+
+    // Tuples, and taking them apart.
+    let pair: (I32, String) = (7, "seven")
+    let (n, label): (I32, String) = pair
+
+    // Strings are UTF-8. ${...} puts any expression into a string.
+    Console.Println("name = ${name}, age = ${age}, count = ${count}")
+    Console.Println("big = ${big}, ratio = ${ratio}, small = ${small}")
+    Console.Println("flag = ${flag}, initial = ${initial}, pair = ${n}/${label}")
+    Console.Println("bytes = ${name.Len()}, chars = ${name.CharCount()}")
+
+    // Printf is checked at compile time when the format is a literal.
+    Console.Printf("%d items, %5.2f%%, %s\n", count, ratio * 100.0, name)
+
+    // Conversions are explicit. Widening never fails; narrowing returns a Result.
+    let wide: I64 = age.ToI64()
+    let half: F64 = age.ToF64() / 2.0
+    match (big.ToI32()) {
+        Ok(v) => Console.Println("fits in I32: ${v}"),
+        Err(e) => Console.Println("does not fit: ${e.Message()}"),
+    }
+    Console.Println("wide = ${wide}, half = ${half}")
+
+    // let is deep: the contents of a let array cannot be changed either.
+    //   let xs: Array<I32> = [1, 2, 3]
+    //   xs.Push(4)            // error: xs is not mut
+    mut ys: Array<I32> = [1, 2, 3]
+    ys.Push(4)
+    Console.Println("ys has ${ys.Len()} items")
+
+    // Integer overflow is a Panic, not a silent wrap-around.
+    //   let x: I32 = 2147483647
+    //   let y: I32 = x + 1    // Panic
+}
