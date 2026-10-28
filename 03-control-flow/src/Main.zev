@@ -1,0 +1,77 @@
+// Control flow. Conditions need parentheses and bodies need braces.
+// if and match are expressions: they have a value.
+
+module Main
+
+import Zevic.Console
+
+fn Describe(n: I32) -> String {
+    match (n) {
+        0 => "zero",
+        1..=9 => "one digit",
+        x if (x < 0) => "negative",
+        _ => "big",
+    }
+}
+
+fn FizzBuzz(i: I32) -> String {
+    match ((i % 3, i % 5)) {
+        (0, 0) => "FizzBuzz",
+        (0, _) => "Fizz",
+        (_, 0) => "Buzz",
+        _ => "${i}",
+    }
+}
+
+fn Main() {
+    // if / else if / else
+    let score: I32 = 72
+    let grade: String = if (score >= 80) {
+        "A"
+    } else if (score >= 60) {
+        "B"
+    } else {
+        "C"
+    }
+    Console.Println("grade = ${grade}")
+
+    // match with ranges and guards
+    for (n in [0, 5, 42, -3]) {
+        Console.Println("${n}: ${Describe(n)}")
+    }
+
+    // while
+    mut i: I32 = 0
+    while (i < 3) {
+        Console.Println("while ${i}")
+        i += 1
+    }
+
+    // loop runs until break
+    mut total: I32 = 0
+    loop {
+        total += 10
+        if (total >= 30) { break }
+    }
+    Console.Println("total = ${total}")
+
+    // for over a range: 0..3 is 0,1,2 and 0..=3 is 0,1,2,3
+    for (k in 0..3) { Console.Println("range ${k}") }
+
+    // for with an index
+    let fruits: Array<String> = ["apple", "banana", "cherry"]
+    for (idx, f in fruits) {
+        Console.Println("${idx}: ${f}")
+    }
+
+    // continue
+    for (k in 1..=6) {
+        if (k % 2 == 0) { continue }
+        Console.Println("odd ${k}")
+    }
+
+    // FizzBuzz with a tuple pattern
+    for (k in 1..=15) {
+        Console.Println(FizzBuzz(k))
+    }
+}
