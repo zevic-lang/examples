@@ -1,0 +1,68 @@
+// Array, Map and Iterable.
+
+module Main
+
+import Zevic.Console
+
+// Your own type works in for loops if it implements Iterable.
+class Countdown : Iterable<I32> {
+    from: I32
+
+    fn Init(from: I32) { this.from = from }
+
+    fn Iter() -> Iterator<I32> {
+        CountdownIter.New(this.from)
+    }
+}
+
+class CountdownIter : Iterator<I32> {
+    n: I32
+
+    fn Init(n: I32) { this.n = n }
+
+    mut fn Next() -> Option<I32> {
+        if (this.n <= 0) { return None }
+        let v: I32 = this.n
+        this.n -= 1
+        Some(v)
+    }
+}
+
+fn Main() {
+    // Array
+    mut nums: Array<I32> = [5, 3, 8]
+    nums.Push(1)
+    nums.Insert(0, 9)
+    nums.Sort()
+    Console.Println("sorted, first = ${nums[0]}, last = ${nums.Last().Unwrap()}")
+    Console.Println("get 99 = ${nums.Get(99).IsNone()}")
+    Console.Println("slice len = ${nums.Slice(1, 3).Len()}")
+    Console.Println("contains 8 = ${nums.Contains(8)}")
+
+    let doubled: Array<I32> = nums.Map((x: I32) => x * 2)
+    let big: Array<I32> = nums.Filter((x: I32) => x > 4)
+    let total: I32 = nums.Reduce(0, (acc: I32, x: I32) => acc + x)
+    Console.Println("doubled = ${doubled.Len()}, big = ${big.Len()}, total = ${total}")
+
+    let words: Array<String> = ["a", "b", "c"]
+    Console.Println(words.Join("-"))
+
+    // Map: the key must be Hashable. Iteration follows insertion order.
+    mut ages: Map<String, I32> = Map.New()
+    ages.Set("ann", 30)
+    ages.Set("bob", 25)
+    Console.Println("ann = ${ages.Get("ann").UnwrapOr(0)}")
+    Console.Println("has carol = ${ages.Contains("carol")}")
+    for ((name, age) in ages) {
+        Console.Println("${name} is ${age}")
+    }
+    ages.Remove("bob")
+    Console.Println("size = ${ages.Len()}")
+
+    // Anything Iterable works in for, and gets Map, Filter, Reduce, Any, All, Find ...
+    for (x in Countdown.New(3)) {
+        Console.Println("countdown ${x}")
+    }
+    let count: I64 = Countdown.New(10).Count((x: I32) => x % 2 == 0)
+    Console.Println("even numbers = ${count}")
+}
