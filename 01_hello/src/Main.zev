@@ -1,0 +1,18 @@
+// Hello, World.
+//
+// Every executable package has a module named Main with one public function Main.
+// Names that start with an upper-case letter are public. Main is the entry point.
+
+module Main
+
+import Zevic.Console
+
+fn Main() {
+    Console.Println("Hello, World!")
+}
+
+// Main can also receive the command-line arguments (the program name is not included):
+//
+//   fn Main(args: Array<String>) {
+//       Console.Println("got ${args.Len()} arguments")
+//   }
