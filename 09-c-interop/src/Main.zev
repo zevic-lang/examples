@@ -1,0 +1,41 @@
+// Calling C from Zevic and Zevic from C.
+//
+//   native/mathx.c    a C file that is built together with the program
+//
+// Types do not convert automatically: use .ToCInt(), .ToC(), String.FromC(...) and so on.
+
+module Main
+
+import Zevic.Console
+
+// Bring in C functions. No header file is needed: you write the declarations.
+extern "C" {
+    fn abs(n: CInt) -> CInt
+    fn sqrt(x: CDouble) -> CDouble
+    fn printf(fmt: CString, ...) -> CInt
+    fn mathx_square(x: CInt) -> CInt
+    fn mathx_version() -> CString
+    fn mathx_greet_twice(name: CString) -> CVoid
+}
+
+// Expose a Zevic function to C. The name is not mangled.
+export "C" fn Greet(name: CString) -> CVoid {
+    Console.Println("Hello from Zevic, ${String.FromC(name)}!")
+}
+
+fn Main() {
+    let a: CInt = abs((-7).ToCInt())
+    Console.Println("abs(-7) = ${a.ToI32()}")
+
+    let r: CDouble = sqrt(2.0.ToCDouble())
+    Console.Println("sqrt(2) = ${r.ToF64()}")
+
+    Console.Println("square = ${mathx_square(12.ToCInt()).ToI32()}")
+    Console.Println("version = ${String.FromC(mathx_version())}")
+
+    // A C function that calls back into Zevic (Greet).
+    mathx_greet_twice("Zevic".ToC())
+
+    // C variadic functions take C types only.
+    printf("%d-%s\n".ToC(), 42.ToCInt(), "done".ToC())
+}
