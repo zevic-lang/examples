@@ -1,0 +1,23 @@
+// Several files and modules.
+//
+//   src/Main.zev          module Main
+//   src/Util/Math.zev     module Greeter.Util.Math
+//   src/Util/Text.zev     module Greeter.Util.Text
+//
+// The module name follows the directory, and starts with the package name (Greeter).
+
+module Main
+
+import Zevic.Console
+import Greeter.Util.Math as M
+import Greeter.Util.Text
+
+fn Main() {
+    // With "as", use the short name. Without it, write the full path.
+    Console.Println("2 + 3 = ${M.Add(2, 3)}")
+    Console.Println(Greeter.Util.Text.Repeat("ab", 3))
+
+    // Lower-case names are private to their module:
+    //   M.clamp(5, 0, 3)       // error: clamp is private
+    Console.Println("clamped = ${M.Clamp(50, 0, 10)}")
+}
