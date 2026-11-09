@@ -1,0 +1,8 @@
+running 5 tests
+  ok    Add adds two numbers
+  ok    Add panics on overflow
+  ok    Divide returns an error for zero
+  ok    firstEven is private but testable
+  ok    Clamp keeps the value inside the range
+
+5 passed, 0 failed

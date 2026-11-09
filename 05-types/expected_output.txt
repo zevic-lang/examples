@@ -1,0 +1,8 @@
+length = 5.0
+same point: true
+age = 21
+** Taro, 21 **
+** area 3.14159 **
+** area 6.0 **
+** area 0.0 **
+popped = b, left = 1

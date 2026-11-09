@@ -1,0 +1,7 @@
+abs(-7) = 7
+sqrt(2) = 1.4142135623730951
+square = 144
+version = mathx 1.0
+Hello from Zevic, Zevic!
+Hello from Zevic, Zevic!
+42-done

@@ -1,0 +1,33 @@
+grade = B
+0: zero
+5: one digit
+42: big
+-3: negative
+while 0
+while 1
+while 2
+total = 30
+range 0
+range 1
+range 2
+0: apple
+1: banana
+2: cherry
+odd 1
+odd 3
+odd 5
+1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+FizzBuzz

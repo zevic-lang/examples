@@ -14,7 +14,7 @@ fn Describe(n: I32) -> String {
     }
 }
 
-fn FizzBuzz(i: I32) -> String {
+fn FizzBuzz(i: I64) -> String {
     match ((i % 3, i % 5)) {
         (0, 0) => "FizzBuzz",
         (0, _) => "Fizz",
@@ -36,7 +36,8 @@ fn Main() {
     Console.Println("grade = ${grade}")
 
     // match with ranges and guards
-    for (n in [0, 5, 42, -3]) {
+    let cases: Array<I32> = [0, 5, 42, -3]
+    for (n in cases) {
         Console.Println("${n}: ${Describe(n)}")
     }
 

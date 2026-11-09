@@ -1,0 +1,15 @@
+sorted, first = 1, last = 9
+get 99 = true
+slice len = 2
+contains 8 = true
+doubled = 5, big = 3, total = 26
+a-b-c
+ann = 30
+has carol = false
+ann is 30
+bob is 25
+size = 1
+countdown 3
+countdown 2
+countdown 1
+even numbers = 5

@@ -1,0 +1,12 @@
+Hello, Zevic!
+2 + 3 = 5
+10! = 3628800
+Sum = 10, empty = 0
+xs[0] = 9
+Apply = 42
+counter = 3
+First = 5
+Larger = 8
+square 4
+square 16
+square 36

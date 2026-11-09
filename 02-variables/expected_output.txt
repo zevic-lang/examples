@@ -1,0 +1,8 @@
+name = Zevic, age = 1, count = 2
+big = 9000000000, ratio = 0.75, small = 255
+flag = true, initial = Z, pair = 7/seven
+bytes = 5, chars = 5
+2 items, 75.00%, Zevic
+does not fit: 9000000000 does not fit in I32
+wide = 1, half = 0.5
+ys has 4 items

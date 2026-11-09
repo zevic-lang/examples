@@ -78,7 +78,8 @@ fn Main() {
     Console.Println("Larger = ${Larger(3, 8)}")
 
     // Higher-order methods take lambdas.
-    let evens: Array<I32> = [1, 2, 3, 4, 5, 6].Filter((x: I32) => x % 2 == 0)
+    let numbers: Array<I32> = [1, 2, 3, 4, 5, 6]
+    let evens: Array<I32> = numbers.Filter((x: I32) => x % 2 == 0)
     let squares: Array<I32> = evens.Map((x: I32) => x * x)
     squares.Each((x: I32) => Console.Println("square ${x}"))
 }

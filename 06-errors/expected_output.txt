@@ -1,0 +1,8 @@
+age = 42
+kind = InvalidFormat
+message = while reading the age
+full = InvalidFormat: while reading the age
+caused by: InvalidFormat: cannot read "abc" as a number: found a character that is not a digit
+not found, continuing
+safe = 0
+first = x
