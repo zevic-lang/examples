@@ -1,0 +1,63 @@
+// Regular expressions: searching, groups, named groups, replacing and splitting.
+// The engine runs in time proportional to the text (no catastrophic backtracking).
+// Modules: Zevic.Regex.
+
+module Main
+
+import Zevic.Console
+import Zevic.Regex
+
+// Show the first match of a pattern, or why the pattern is wrong.
+fn Find(pattern: String, text: String) {
+    match (Regex.Compile(pattern)) {
+        Err(e) => Console.Println("${pattern} => error: ${e.Message()}"),
+        Ok(re) => {
+            match (re.Find(text)) {
+                Some(m) => Console.Println("${pattern} on \"${text}\": [${m.Text()}] at ${m.Start()}..${m.End()}"),
+                None => Console.Println("${pattern} on \"${text}\": no match"),
+            }
+        },
+    }
+}
+
+fn Main() {
+    // Literals, classes, repeats, greedy and lazy.
+    Find("colou?r", "my color")
+    Find("[a-c]+", "xxabcabcxx")
+    Find("a+", "caaat")
+    Find("a+?", "caaat")
+    Find("a{2,3}", "aaaa")
+    Find("^abc$", "abcd")
+    Find("\\d+\\.\\d+", "pi is 3.14159")
+    Find("(?i)hello", "Say HELLO")
+    Find("(a", "x")
+
+    // Groups: numbered and named.
+    let date: Regex.Regex = Regex.Compile("(?P<y>\\d{4})-(?P<m>\\d{2})-(?P<d>\\d{2})").Unwrap()
+    match (date.Find("due 2026-11-09 sharp")) {
+        Some(m) => {
+            Console.Println("whole ${m.Group(0).Unwrap()}, year ${m.Group(1).Unwrap()}, month ${m.Named("m").Unwrap()}, day ${m.Named("d").Unwrap()}")
+            Console.Println("groups: ${m.GroupCount()}")
+        },
+        None => Console.Println("no date"),
+    }
+
+    // All matches, and a yes/no test.
+    let all: Array<Regex.Match> = date.FindAll("2026-11-09 and 2027-01-02, not 20-1-1")
+    Console.Println("found ${all.Len()} dates: ${all.Map((x: Regex.Match) => x.Text()).Join(", ")}")
+    Console.Println("is match: ${date.IsMatch("nothing")} ${date.IsMatch("2026-11-09")}")
+
+    // Replacing: $1 or ${name} insert a group, $0 the whole match.
+    Console.Println(date.ReplaceAll("due 2026-11-09 or 2027-01-02", "$3/$2/$1"))
+    Console.Println(date.Replace("2026-11-09 2027-01-02", "<$0>"))
+    Console.Println(date.ReplaceAll("2026-11-09", "\${d}.\${m}.\${y}"))
+
+    // Splitting.
+    let sep: Regex.Regex = Regex.Compile("\\s*,\\s*").Unwrap()
+    Console.Println(sep.Split("a , b,c ,   d").Join("|"))
+
+    // Replace every run of digits; escape text that should match literally.
+    Console.Println(Regex.Compile("\\d+").Unwrap().ReplaceAll("a1b22c333", "#"))
+    let literal: String = Regex.Escape("1+1=2?")
+    Console.Println("${literal} matches itself: ${Regex.IsMatch(literal, "is 1+1=2? yes").Unwrap()}")
+}

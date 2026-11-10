@@ -1,0 +1,19 @@
+colou?r on "my color": [color] at 3..8
+[a-c]+ on "xxabcabcxx": [abcabc] at 2..8
+a+ on "caaat": [aaa] at 1..4
+a+? on "caaat": [a] at 1..2
+a{2,3} on "aaaa": [aaa] at 0..3
+^abc$ on "abcd": no match
+\d+\.\d+ on "pi is 3.14159": [3.14159] at 6..13
+(?i)hello on "Say HELLO": [HELLO] at 4..9
+(a => error: regex: a ( group is not closed (at position 2)
+whole 2026-11-09, year 2026, month 11, day 09
+groups: 3
+found 2 dates: 2026-11-09, 2027-01-02
+is match: false true
+due 09/11/2026 or 02/01/2027
+<2026-11-09> 2027-01-02
+09.11.2026
+a|b|c|d
+a#b#c#
+1\+1\=2\? matches itself: true

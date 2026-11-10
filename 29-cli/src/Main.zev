@@ -1,0 +1,70 @@
+// A command-line interface: flags, options, positional arguments, sub-commands and generated help.
+// The arguments are fixed arrays here, so the output is repeatable; a real program passes
+// Env.Args() (Cli.Command.ParseEnv does that) or calls ParseOrExit.
+// Modules: Zevic.Cli.
+
+module Main
+
+import Zevic.Cli
+import Zevic.Console
+
+fn greeter() -> Cli.Command {
+    mut app: Cli.Command = Cli.Command.New("greet", "Say hello")
+    app.SetVersion("1.2.3")
+    app.Flag("loud", "l", "Shout")
+    app.Flag("verbose", "v", "More output (repeat for more)")
+    app.Option("name", "n", "NAME", "Who to greet", "world")
+    app.RequiredOption("count", "c", "N", "How many times")
+    app.Positional("file", "Input file", true)
+    app.Rest("more", "Other files")
+    return app
+}
+
+// An error as text, or "ok".
+fn Why(r: Result<Cli.Matches, Error>) -> String {
+    match (r) {
+        Ok(_) => "ok",
+        Err(e) => e.Message(),
+    }
+}
+
+fn Main() {
+    let app: Cli.Command = greeter()
+
+    // Long and short names, "--name=value", clustered short flags (-lv) and a value glued on (-c3).
+    let m: Cli.Matches = app.Parse(["-lvv", "-c3", "--name=Taro", "a.txt", "b.txt", "c.txt"]).Unwrap()
+    Console.Println("loud=${m.Flag("loud")} verbose=${m.Count("verbose")} name=${m.Get("name").Unwrap()}")
+    Console.Println("count=${m.GetInt("count").Unwrap().Unwrap()} file=${m.Arg("file").Unwrap()} more=${m.Positionals().Len()}")
+
+    // Defaults, and "--" ends the options so that a file may start with a dash.
+    let d: Cli.Matches = app.Parse(["--count", "1", "--", "-weird"]).Unwrap()
+    Console.Println("default name=${d.Get("name").Unwrap()} file=${d.Arg("file").Unwrap()}")
+
+    // Mistakes come back as errors with a useful message.
+    Console.Println("no file:      ${Why(app.Parse(["-c", "1"]))}")
+    Console.Println("no count:     ${Why(app.Parse(["f"]))}")
+    Console.Println("unknown flag: ${Why(app.Parse(["--nope", "-c", "1", "f"]))}")
+    Console.Println("missing value: ${Why(app.Parse(["-c"]))}")
+
+    // --help and --version are recognised before anything else is checked.
+    Console.Println("help: ${app.Parse(["--help"]).Unwrap().HelpRequested()}, version: ${app.Parse(["-V"]).Unwrap().VersionRequested()}")
+    Console.Print(app.Help())
+
+    // Sub-commands, like git: each has its own flags and arguments.
+    mut tool: Cli.Command = Cli.Command.New("tool", "A tool with commands")
+    tool.Flag("quiet", "q", "Be quiet")
+    mut add: Cli.Command = Cli.Command.New("add", "Add files")
+    add.Flag("force", "f", "Force")
+    add.Rest("paths", "Files to add")
+    tool.Subcommand(add)
+    mut rm: Cli.Command = Cli.Command.New("rm", "Remove files")
+    rm.Positional("path", "File to remove", true)
+    tool.Subcommand(rm)
+
+    let t: Cli.Matches = tool.Parse(["-q", "add", "-f", "a", "b"]).Unwrap()
+    let sub: Cli.Matches = t.SubMatches().Unwrap()
+    Console.Println("command=${t.Subcommand().Unwrap()} quiet=${t.Flag("quiet")} force=${sub.Flag("force")} paths=${sub.Positionals().Len()}")
+    Console.Println("no command: ${Why(tool.Parse([]))}")
+    Console.Println("bad command: ${Why(tool.Parse(["zip"]))}")
+    Console.Print(tool.Help())
+}

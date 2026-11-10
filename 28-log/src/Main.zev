@@ -1,0 +1,48 @@
+// Structured logging: levels, key/value fields, JSON lines and a fixed clock for repeatable output.
+// Modules: Zevic.Log, Zevic.DateTime.
+
+module Main
+
+import Zevic.Console
+import Zevic.DateTime
+import Zevic.Log
+
+fn Main() {
+    mut log: Log.Logger = Log.Logger.New()
+    log.ToStdout()
+    log.ShowTime(false)
+
+    // The default level is Info: Debug lines are dropped until the level is lowered.
+    log.Debug("hidden")
+    log.Info("started")
+    log.Warn("careful")
+    log.Error("failed")
+    log.SetLevel(Log.Level.Debug)
+    log.Debug("now visible")
+
+    // With returns a new logger that adds fields to every line.
+    let req: Log.Logger = log.With("request", "42").With("user", "Taro Yamada")
+    req.Info("handled")
+    log.Info("no fields")
+    req.LogKV(Log.Level.Warn, "slow", [("ms", "1500"), ("note", "a=b \"q\""), ("empty", "")])
+
+    // The same calls as JSON lines (the child logger keeps the settings it was made with).
+    log.UseJson(true)
+    log.With("request", "7").With("user", "Ann \"A\"").Info("json \"line\"")
+    log.Info("plain json")
+
+    // Levels can be tested and parsed.
+    log.SetLevel(Log.Level.Error)
+    log.Warn("dropped")
+    log.Error("kept")
+    Console.Println("enabled: ${log.Enabled(Log.Level.Warn)} ${log.Enabled(Log.Level.Error)} ${Log.LevelName(log.GetLevel())}")
+    Console.Println("parse: ${Log.ParseLevel("Warning").Unwrap() == Log.Level.Warn} ${Log.ParseLevel("nope").IsNone()}")
+
+    // With a fixed clock the timestamps are repeatable (the clock is a function).
+    mut timed: Log.Logger = Log.Logger.New()
+    timed.ToStdout()
+    timed.SetClock(() => DateTime.Make(2026, 11, 9, 7, 13, 0).Unwrap().AddMillis(123))
+    timed.Info("with time")
+    timed.UseJson(true)
+    timed.Info("with time")
+}

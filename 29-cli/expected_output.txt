@@ -1,0 +1,37 @@
+loud=true verbose=2 name=Taro
+count=3 file=a.txt more=3
+default name=world file=-weird
+no file:      the argument <file> is required
+no count:     the option --count is required
+unknown flag: unknown option --nope
+missing value: the option -c needs a value
+help: true, version: true
+greet 1.2.3 - Say hello
+
+Usage: greet [OPTIONS] <file> [more...]
+
+Arguments:
+  <file>             Input file
+  [more...]          Other files
+
+Options:
+  -l, --loud         Shout
+  -v, --verbose      More output (repeat for more)
+  -n, --name <NAME>  Who to greet [default: world]
+  -c, --count <N>    How many times [required]
+  -h, --help         Print help
+  -V, --version      Print version
+command=add quiet=true force=true paths=2
+no command: a command is needed (one of: add, rm)
+bad command: unknown command "zip"
+tool - A tool with commands
+
+Usage: tool [OPTIONS] <COMMAND>
+
+Commands:
+  add          Add files
+  rm           Remove files
+
+Options:
+  -q, --quiet  Be quiet
+  -h, --help   Print help

@@ -1,0 +1,38 @@
+// Checksums and hashes with their published test vectors: CRC-32, Adler-32, SHA-256 and HMAC-SHA-256.
+// Modules: Zevic.Digest, Zevic.Encoding, Zevic.Bytes.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Digest
+import Zevic.Encoding
+
+fn Main() {
+    // CRC-32 (the one in zip and gzip) of "123456789" is the standard check value.
+    let nine: Array<U8> = Bytes.FromString("123456789")
+    Console.Printf("crc32:   %08X\n", Digest.Crc32(nine))
+    Console.Printf("adler32: %08X\n", Digest.Adler32(Bytes.FromString("Wikipedia")))
+
+    // A checksum can be computed in pieces: feed the previous result back in.
+    let first: U32 = Digest.Crc32(Bytes.FromString("12345"))
+    let whole: U32 = Digest.Crc32Update(first, Bytes.FromString("6789"))
+    Console.Println("in two pieces: ${whole == Digest.Crc32(nine)}")
+
+    // SHA-256: the FIPS 180 examples, and a hex helper.
+    Console.Println("sha256(abc)   = ${Digest.Sha256String("abc")}")
+    Console.Println("sha256(empty) = ${Digest.Sha256String("")}")
+    Console.Println("sha256(long)  = ${Digest.Sha256String("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")}")
+    let million: Array<U8> = Array<U8>.Repeat(97, 1000)
+    Console.Println("1000 x 'a'    = ${Digest.Sha256Hex(million)}")
+
+    // The raw digest is 32 bytes.
+    Console.Println("digest length: ${Digest.Sha256(Bytes.FromString("abc")).Len()}")
+
+    // HMAC-SHA-256 (RFC 4231 test case 6 uses a key longer than the block size).
+    let mac: Array<U8> = Digest.HmacSha256(Bytes.FromString("key"), Bytes.FromString("The quick brown fox jumps over the lazy dog"))
+    Console.Println("hmac = ${Encoding.HexEncode(mac)}")
+    let longKey: Array<U8> = Array<U8>.Repeat(170, 131)
+    let mac2: Array<U8> = Digest.HmacSha256(longKey, Bytes.FromString("Test Using Larger Than Block-Size Key - Hash Key First"))
+    Console.Println("hmac with a long key = ${Encoding.HexEncode(mac2)}")
+}

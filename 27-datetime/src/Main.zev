@@ -1,0 +1,51 @@
+// Dates and times: building values, calendar facts, arithmetic, formatting and parsing.
+// Every date here is fixed, so the output never depends on the clock.
+// Modules: Zevic.DateTime, Zevic.Time.
+
+module Main
+
+import Zevic.Console
+import Zevic.DateTime
+import Zevic.Time
+
+fn Main() {
+    // Make checks the fields; Date gives midnight.
+    let t: DateTime.DateTime = DateTime.Make(2026, 11, 8, 18, 3, 9).Unwrap()
+    Console.Println("${t.ToIso()}  ${t.WeekdayName()}, day ${t.DayOfYear()} of the year, ${t.MonthName()}")
+    Console.Println("unix seconds: ${t.ToUnixSeconds()}")
+    Console.Println("invalid dates fail: ${DateTime.Make(2023, 2, 29, 0, 0, 0).IsErr()} ${DateTime.Make(2023, 13, 1, 0, 0, 0).IsErr()} ${DateTime.Date(2024, 2, 29).IsOk()}")
+
+    // Calendar facts.
+    Console.Println("leap years: ${DateTime.IsLeapYear(2000)} ${DateTime.IsLeapYear(1900)} ${DateTime.IsLeapYear(2024)}")
+    Console.Println("days in February: ${DateTime.DaysInMonth(2023, 2)} and ${DateTime.DaysInMonth(2024, 2)}")
+
+    // Arithmetic. Adding months clamps to the end of a shorter month.
+    Console.Println("+30 days:  ${t.AddDays(30).ToIso()}")
+    Console.Println("-19 hours: ${t.AddHours(-19).ToIso()}")
+    Console.Println("+3 months: ${t.AddMonths(3).ToIso()}")
+    Console.Println("Jan 31 + 1 month: ${DateTime.Date(2024, 1, 31).Unwrap().AddMonths(1).ToIso()}")
+    Console.Println("Feb 29 + 1 year:  ${DateTime.Date(2024, 2, 29).Unwrap().AddYears(1).ToIso()}")
+    let span: Time.Duration = t.AddDays(2).Sub(t)
+    Console.Println("two days apart: ${span.Seconds()} seconds")
+
+    // The same instant in another zone: only the offset changes.
+    let tokyo: DateTime.DateTime = t.InOffset(9 * 3600)
+    Console.Println("in Tokyo: ${tokyo.ToIso()}, same instant: ${tokyo.SameInstant(t)}")
+    Console.Println("order: ${t.Before(t.AddSeconds(1))} ${t.After(t.AddSeconds(1))} ${t.Compare(t)}")
+
+    // From and to the Unix epoch.
+    Console.Println(DateTime.FromUnixSeconds(0).ToIso())
+    Console.Println(DateTime.FromUnixMillis(1700000000123).ToIso())
+
+    // Formatting with strftime-like patterns.
+    Console.Println(t.Format("%Y/%m/%d %H:%M:%S"))
+    Console.Println(t.Format("%A, %d %B %Y"))
+    Console.Println(tokyo.Format("%a %b %e %I:%M %p %z"))
+
+    // Parsing ISO 8601 text, and a custom pattern.
+    Console.Println(DateTime.Parse("2026-11-08T18:03:09+09:00").Unwrap().ToIso())
+    Console.Println(DateTime.Parse("2026-11-08").Unwrap().ToIso())
+    Console.Println("garbage fails: ${DateTime.Parse("tomorrow").IsErr()}")
+    let custom: DateTime.DateTime = DateTime.ParseFormat("24/12/2026 08:30", "%d/%m/%Y %H:%M").Unwrap()
+    Console.Println("custom: ${custom.ToIso()} ${custom.WeekdayName()}")
+}

@@ -1,0 +1,44 @@
+// Turning bytes into text and back: hexadecimal, Base64 (standard and URL-safe) and percent-encoding.
+// Modules: Zevic.Encoding, Zevic.Bytes.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Encoding
+
+fn Main() {
+    // Hex: lower case by default, upper case on request, and decoding can fail.
+    let data: Array<U8> = [0, 1, 171, 255]
+    Console.Println("hex: ${Encoding.HexEncode(data)} ${Encoding.HexEncodeUpper(data)}")
+    Console.Println("hex of a string: ${Encoding.HexEncodeString("Zevic")}")
+    Console.Println("decoded: ${Encoding.HexEncode(Encoding.HexDecode("00ff10").Unwrap())}")
+    Console.Println("odd length fails: ${Encoding.HexDecode("abc").IsErr()}, bad digit fails: ${Encoding.HexDecode("zz").IsErr()}")
+
+    // Base64: the padding rules from the RFC.
+    Console.Println("base64: [${Encoding.Base64EncodeString("Man")}] [${Encoding.Base64EncodeString("Ma")}] [${Encoding.Base64EncodeString("M")}] [${Encoding.Base64EncodeString("")}]")
+    let text: String = Encoding.Base64DecodeString("aGVsbG8sIHdvcmxkIQ==").Unwrap()
+    Console.Println("decoded: ${text}")
+
+    // The URL-safe alphabet replaces + and / with - and _ and drops the padding.
+    let tricky: Array<U8> = [251, 255, 254]
+    Console.Println("standard: ${Encoding.Base64Encode(tricky)}, url-safe: ${Encoding.Base64UrlEncode(tricky)}")
+    Console.Println("url-safe back: ${Encoding.HexEncode(Encoding.Base64UrlDecode("-__-").Unwrap())}")
+    Console.Println("garbage fails: ${Encoding.Base64Decode("T").IsErr()}")
+
+    // Percent-encoding for URLs; forms use + for a space.
+    Console.Println("url: ${Encoding.UrlEncode("a b&c=d/é~")}")
+    Console.Println("form: ${Encoding.FormEncode("a b+c")}")
+    Console.Println("url back: ${Encoding.UrlDecode("a%20b%26c%3Dd%2F%C3%A9~").Unwrap()}")
+    Console.Println("form back: ${Encoding.FormDecode("a+b%2B").Unwrap()}")
+    Console.Println("bad escape fails: ${Encoding.UrlDecode("%zz").IsErr()}")
+
+    // Every encoder has a decoder: a round trip over all byte values.
+    mut all: Array<U8> = []
+    for (i in 0..256) {
+        all.Push(i.ToU8Wrap())
+    }
+    let same: Bool = Encoding.Base64Decode(Encoding.Base64Encode(all)).Unwrap() == all
+    Console.Println("all 256 bytes survive base64: ${same}, hex length ${Encoding.HexEncode(all).Len()}")
+    Console.Println("bytes of a string: ${Bytes.FromString("é").Len()}")
+}

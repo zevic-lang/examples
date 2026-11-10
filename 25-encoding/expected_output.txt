@@ -1,0 +1,16 @@
+hex: 0001abff 0001ABFF
+hex of a string: 5a65766963
+decoded: 00ff10
+odd length fails: true, bad digit fails: true
+base64: [TWFu] [TWE=] [TQ==] []
+decoded: hello, world!
+standard: +//+, url-safe: -__-
+url-safe back: fbfffe
+garbage fails: true
+url: a%20b%26c%3Dd%2F%C3%A9~
+form: a+b%2Bc
+url back: a b&c=d/é~
+form back: a b+
+bad escape fails: true
+all 256 bytes survive base64: true, hex length 512
+bytes of a string: 2
