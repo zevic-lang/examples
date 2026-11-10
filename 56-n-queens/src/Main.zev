@@ -1,0 +1,77 @@
+// The N queens puzzle by backtracking: count the solutions for several board sizes
+// and print the first solution for 8 queens.
+// Shows: a class that holds the search state and recursion with undo,
+// using three boolean arrays to detect attacks.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+class Solver {
+    n: I64
+    cols: Array<Bool>
+    diag1: Array<Bool> // row + col
+    diag2: Array<Bool> // row - col + n - 1
+    queens: Array<I64> // queens[row] = column
+    Count: I64 = 0
+    First: Array<I64> = []
+
+    fn Init(n: I64) {
+        this.n = n
+        this.cols = Array<Bool>.Repeat(false, n)
+        this.diag1 = Array<Bool>.Repeat(false, 2 * n)
+        this.diag2 = Array<Bool>.Repeat(false, 2 * n)
+        this.queens = Array<I64>.Repeat(0, n)
+    }
+
+    mut fn Place(row: I64) {
+        if (row == this.n) {
+            if (this.Count == 0) {
+                this.First = this.queens.Slice(0, this.n)
+            }
+            this.Count += 1
+            return
+        }
+        for (c in 0..this.n) {
+            let d1: I64 = row + c
+            let d2: I64 = row - c + this.n - 1
+            if (this.cols[c] || this.diag1[d1] || this.diag2[d2]) { continue }
+            this.cols[c] = true
+            this.diag1[d1] = true
+            this.diag2[d2] = true
+            this.queens[row] = c
+            this.Place(row + 1)
+            // undo
+            this.cols[c] = false
+            this.diag1[d1] = false
+            this.diag2[d2] = false
+        }
+    }
+}
+
+fn Board(queens: Array<I64>) -> String {
+    mut lines: Array<String> = []
+    for (row in 0..queens.Len()) {
+        mut line: Array<String> = []
+        for (c in 0..queens.Len()) {
+            line.Push(if (queens[row] == c) { "Q" } else { "." })
+        }
+        lines.Push(line.Join(" "))
+    }
+    Text.Join(lines, "\n")
+}
+
+fn Main() {
+    for (n in 1..=8) {
+        mut s: Solver = Solver.New(n)
+        s.Place(0)
+        Console.Println("${n} queens: ${s.Count} solutions")
+    }
+
+    mut eight: Solver = Solver.New(8)
+    eight.Place(0)
+    Console.Println("first solution for 8 queens: ${eight.First.Map((c: I64) => "${c}").Join(" ")}")
+    Console.Println(Board(eight.First))
+}

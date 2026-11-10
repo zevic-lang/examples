@@ -1,0 +1,72 @@
+// Union types: a value that is one of several types, written A | B.
+// `is` checks the type (and narrows it inside the branch), `match` with type patterns
+// must cover every member.
+
+module Main
+
+import Zevic.Console
+
+class ParseError {
+    Message: String
+    fn Init(message: String) { this.Message = message }
+}
+
+// Returns either a number or an error object, no Result needed.
+fn Parse(text: String) -> I32 | ParseError {
+    match (text.ToI32()) {
+        Ok(n) => n,
+        Err(_) => ParseError.New("not a number: ${text}"),
+    }
+}
+
+// A union of three unrelated types.
+fn Describe(v: I32 | String | ParseError) -> String {
+    match (v) {
+        n: I32 => "int ${n}",
+        s: String => "text '${s}'",
+        e: ParseError => "error (${e.Message})",
+    }
+}
+
+// `is` narrows: after the check, `r` has the member type.
+fn Double(r: I32 | ParseError) -> I32 | ParseError {
+    if (r is ParseError) { return r }
+    r * 2
+}
+
+// A smaller union can be passed where a bigger one is expected.
+fn Widen(r: I32 | ParseError) -> I32 | String | ParseError { r }
+
+fn Main() {
+    let inputs: Array<String> = ["21", "x1"]
+    for (text in inputs) {
+        let r: I32 | ParseError = Parse(text)
+        if (r is I32) {
+            Console.Println("${text}: number ${r}")
+        } else {
+            Console.Println("${text}: ${r.Message}")
+        }
+        let d: I32 | ParseError = Double(r)
+        if (d is I32) { Console.Println("  doubled ${d}") }
+    }
+
+    let a: I32 | String | ParseError = 7
+    let b: I32 | String | ParseError = "seven"
+    let c: I32 | String | ParseError = ParseError.New("seven?")
+    Console.Println(Describe(a))
+    Console.Println(Describe(b))
+    Console.Println(Describe(c))
+    Console.Println(Describe(Widen(Parse("5"))))
+
+    // Unions work as element types, too.
+    let mixed: Array<I32 | String> = [1, "two", 3]
+    mut ints: I32 = 0
+    mut words: I32 = 0
+    for (item in mixed) {
+        match (item) {
+            n: I32 => { ints += n },
+            _: String => { words += 1 },
+        }
+    }
+    Console.Println("sum of ints ${ints}, strings ${words}")
+}

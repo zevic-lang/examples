@@ -1,0 +1,54 @@
+// Tasks that share a counter need a mutex, so that "read, add one, write" is
+// never interleaved. With the lock the final count is always exact.
+// Modules: Zevic.Async.
+
+module Main
+
+import Zevic.Async
+import Zevic.Console
+
+class Counter {
+    lock: Async.Mutex
+    N: I64 = 0
+
+    fn Init() { this.lock = Async.Mutex.New() }
+
+    // Lock, and release on every way out of the method with defer.
+    mut fn Add(by: I64) {
+        this.lock.Lock()
+        defer this.lock.Unlock()
+        this.N += by
+    }
+}
+
+fn Main() {
+    mut counter: Counter = Counter.New()
+    mut tasks: Array<Async.Task<Unit>> = []
+    for (t in 0..8) {
+        tasks.Push(async {
+            for (i in 0..5000) {
+                counter.Add(1)
+            }
+        })
+    }
+    for (t in tasks) {
+        await t
+    }
+    Console.Println("8 tasks x 5000 increments = ${counter.N}")
+
+    // Different amounts: the total does not depend on the order.
+    mut sum: Counter = Counter.New()
+    mut more: Array<Async.Task<Unit>> = []
+    for (k in 1..=10) {
+        let amount: I64 = k
+        more.Push(async {
+            for (i in 0..1000) {
+                sum.Add(amount)
+            }
+        })
+    }
+    for (t in more) {
+        await t
+    }
+    Console.Println("sum of 1000 x (1..=10) = ${sum.N}")
+}

@@ -1,0 +1,8 @@
+1500 ms = 1.5 s = 1500000 us = 1500000000 ns
+sum 3500 ms, difference 2000 ms
+slept at least 40 ms: true
+clock moves forward: true
+elapsed >= 0: true
+sum = 5000050000, took a non-negative time: true
+wall clock after 2023: true
+seconds and millis agree: true

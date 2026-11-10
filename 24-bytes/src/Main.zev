@@ -1,0 +1,46 @@
+// Bytes are Array<U8>. The Bytes module converts text, and reads and writes
+// big-endian (BE) and little-endian (LE) integers.
+// Modules: Zevic.Bytes, Zevic.Fs, Zevic.Path.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Fs
+import Zevic.Path
+
+fn Main() {
+    // Text to bytes and back.
+    let b: Array<U8> = Bytes.FromString("héllo")
+    Console.Println("length ${b.Len()}, second and third byte ${b[1]} ${b[2]}")
+    Console.Println("valid UTF-8: ${Bytes.IsUtf8(b)}, text: ${Bytes.ToString(b).Unwrap()}")
+
+    // Invalid UTF-8: ToString fails, ToStringLossy replaces the bad byte.
+    let bad: Array<U8> = [104, 255, 105]
+    Console.Println("${Bytes.IsUtf8(bad)} ${Bytes.ToString(bad).IsErr()} ${Bytes.ToStringLossy(bad)}")
+
+    // Build a binary record: a 2-byte tag, a 4-byte length (both big-endian)
+    // and a 4-byte checksum (little-endian).
+    mut rec: Array<U8> = []
+    Bytes.PushU16BE(rec, 0xCAFE_U16)
+    Bytes.PushU32BE(rec, 1000_U32)
+    Bytes.PushU32LE(rec, 0xDEADBEEF_U32)
+    Console.Println("record has ${rec.Len()} bytes: ${rec[0]} ${rec[1]} | ${rec[2]} ${rec[3]} ${rec[4]} ${rec[5]} | ${rec[6]} ${rec[7]} ${rec[8]} ${rec[9]}")
+    Console.Println("tag ${Bytes.ReadU16BE(rec, 0)}, length ${Bytes.ReadU32BE(rec, 2)}, checksum ${Bytes.ReadU32LE(rec, 6)}")
+    Console.Println("the same bytes read the other way round: ${Bytes.ReadU16LE(rec, 0)}")
+
+    // 64-bit values.
+    mut wide: Array<U8> = []
+    Bytes.PushU64BE(wide, 0x0102030405060708_U64)
+    Console.Println("first ${wide[0]}, last ${wide[7]}, back ${Bytes.ReadU64BE(wide, 0)}")
+    Console.Println("zeros: ${Bytes.Zeros(4).Len()} bytes")
+
+    // Binary files keep every byte.
+    let dir: String = Fs.MakeTempDir("zevbytes-").Unwrap()
+    let file: String = Path.Join(dir, "blob.bin")
+    Fs.WriteBytes(file, [0, 1, 2, 255, 254, 0, 128, 10, 13]).Unwrap()
+    Fs.AppendBytes(file, [7, 0]).Unwrap()
+    let back: Array<U8> = Fs.ReadBytes(file).Unwrap()
+    Console.Println("file size ${Fs.Size(file).Unwrap()}, bytes read ${back.Len()}, byte 3 = ${back[3]}")
+    Fs.RemoveAll(dir).Unwrap()
+}

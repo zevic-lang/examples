@@ -1,0 +1,62 @@
+// Greatest common divisor and least common multiple: Euclid's algorithm,
+// the extended version (Bezout coefficients), and a fold over an array.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+fn Gcd(a: I64, b: I64) -> I64 {
+    mut x: I64 = a.Abs()
+    mut y: I64 = b.Abs()
+    while (y != 0) {
+        let t: I64 = x % y
+        x = y
+        y = t
+    }
+    x
+}
+
+// Divide first so the intermediate value stays small (overflow panics in Zevic).
+fn Lcm(a: I64, b: I64) -> I64 {
+    if (a == 0 || b == 0) { return 0 }
+    (a.Abs() / Gcd(a, b)) * b.Abs()
+}
+
+// Returns (g, x, y) with a*x + b*y = g.
+fn ExtGcd(a: I64, b: I64) -> (I64, I64, I64) {
+    if (b == 0) { return (a, 1, 0) }
+    let (g, x1, y1): (I64, I64, I64) = ExtGcd(b, a % b)
+    (g, y1, x1 - (a / b) * y1)
+}
+
+fn GcdAll(a: Array<I64>) -> I64 {
+    a.Reduce(0, (acc: I64, x: I64) => Gcd(acc, x))
+}
+
+fn LcmAll(a: Array<I64>) -> I64 {
+    a.Reduce(1, (acc: I64, x: I64) => Lcm(acc, x))
+}
+
+fn Main() {
+    let pairs: Array<(I64, I64)> = [(12, 18), (17, 5), (100, 75), (0, 9), (-8, 12), (270, 192)]
+    for ((a, b) in pairs) {
+        Console.Println("gcd(${a}, ${b}) = ${Gcd(a, b)}, lcm(${a}, ${b}) = ${Lcm(a, b)}")
+    }
+
+    let (g, x, y): (I64, I64, I64) = ExtGcd(240, 46)
+    Console.Println("ExtGcd(240, 46): g = ${g}, 240*${x} + 46*${y} = ${240 * x + 46 * y}")
+
+    let nums: Array<I64> = [12, 18, 30, 42]
+    Console.Println("gcd of all = ${GcdAll(nums)}")
+    mut upTo20: Array<I64> = []
+    for (i in 1..=20) {
+        upTo20.Push(i)
+    }
+    Console.Println("lcm of 1..20 = ${LcmAll(upTo20)}")
+
+    // Reducing a fraction.
+    let (n, d): (I64, I64) = (84, 126)
+    let k: I64 = Gcd(n, d)
+    Console.Println("${n}/${d} = ${n / k}/${d / k}")
+}

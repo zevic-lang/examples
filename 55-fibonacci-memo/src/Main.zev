@@ -1,0 +1,62 @@
+// Fibonacci three ways: naive recursion (slow, so only small n), recursion with a Map
+// as memo table, and an iterative loop. Values up to F(93) fit in U64.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+fn FibNaive(n: I64) -> U64 {
+    if (n < 2) { return n.ToU64Wrap() }
+    FibNaive(n - 1) + FibNaive(n - 2)
+}
+
+// The memo is a mut Map passed down: every F(k) is computed once.
+fn FibMemo(n: I64, mut memo: Map<I64, U64>) -> U64 {
+    if (n < 2) { return n.ToU64Wrap() }
+    match (memo.Get(n)) {
+        Some(v) => return v,
+        None => {},
+    }
+    let v: U64 = FibMemo(n - 1, memo) + FibMemo(n - 2, memo)
+    memo.Set(n, v)
+    v
+}
+
+fn FibIter(n: I64) -> U64 {
+    if (n < 2) { return n.ToU64Wrap() }
+    mut a: U64 = 0
+    mut b: U64 = 1
+    for (i in 2..=n) {
+        let next: U64 = a + b
+        a = b
+        b = next
+    }
+    b
+}
+
+fn Main() {
+    mut memo: Map<I64, U64> = Map.New()
+    mut first: Array<String> = []
+    for (i in 0..15) {
+        first.Push("${FibIter(i)}")
+    }
+    Console.Println("first 15: ${first.Join(" ")}")
+
+    for (n in [10, 20, 30, 50, 90, 93]) {
+        Console.Println("F(${n}) = ${FibMemo(n, memo)} (iterative ${FibIter(n)})")
+    }
+    Console.Println("memo table holds ${memo.Len()} entries")
+
+    Console.Println("naive F(25) = ${FibNaive(25)}")
+
+    // F(94) does not fit in U64: the addition panics instead of wrapping.
+    // The wrapping version shows what the machine would compute.
+    let a: U64 = FibIter(93)
+    let b: U64 = FibIter(92)
+    Console.Println("F(94) wrapped = ${a.WrapAdd(b)}")
+
+    // The ratio of neighbours approaches the golden ratio.
+    let ratio: F64 = FibIter(40).ToF64() / FibIter(39).ToF64()
+    Console.Printf("F(40)/F(39) = %.10f\n", ratio)
+}

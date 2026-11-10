@@ -1,0 +1,48 @@
+// TOML: parse a configuration document, read typed values by key and by dotted
+// path, walk arrays and tables, and write the document back.
+// Modules: Zevic.Toml.
+
+module Main
+
+import Zevic.Console
+import Zevic.Toml
+
+fn Main() {
+    let doc: String = "title = \"Demo\"\n\n[server]\nhost = \"localhost\"\nport = 8080\nratio = 0.75\ndebug = true\n\n[server.limits]\nmax_conn = 1_000\n\n[[plugin]]\nname = \"alpha\"\n\n[[plugin]]\nname = \"beta\"\n"
+    let v: Toml.Value = Toml.Parse(doc).Unwrap()
+
+    Console.Println(v.Get("title").Unwrap().AsString().Unwrap())
+    // GetPath follows dotted keys through nested tables.
+    Console.Println("${v.GetPath("server.host").Unwrap().AsString().Unwrap()}:${v.GetPath("server.port").Unwrap().AsI64().Unwrap()}")
+    Console.Println("ratio ${v.GetPath("server.ratio").Unwrap().AsF64().Unwrap()} debug ${v.GetPath("server.debug").Unwrap().AsBool().Unwrap()}")
+    Console.Println("max_conn ${v.GetPath("server.limits.max_conn").Unwrap().AsI64().Unwrap()}")
+
+    // [[plugin]] makes an array of tables.
+    let plugins: Array<Toml.Value> = v.Get("plugin").Unwrap().AsArray().Unwrap()
+    Console.Println("plugins: ${plugins.Len()}")
+    for (p in plugins) {
+        Console.Println("  ${p.Get("name").Unwrap().AsString().Unwrap()}")
+    }
+
+    // Asking for the wrong type or a missing key gives None, not a crash.
+    Console.Println("wrong type: ${v.GetPath("server.host").Unwrap().AsI64().IsNone()}")
+    Console.Println("missing: ${v.GetPath("server.nothing").IsNone()}")
+
+    // Tables are maps; sort the keys for a stable listing.
+    let server: Map<String, Toml.Value> = v.Get("server").Unwrap().AsTable().Unwrap()
+    Console.Println("server keys: ${server.Keys().Sorted().Join(", ")}")
+
+    // Writing and reading again gives the same text.
+    let text: String = Toml.Stringify(v).Unwrap()
+    Console.Print(text)
+    let again: Toml.Value = Toml.Parse(text).Unwrap()
+    Console.Println("round trip: ${Toml.Stringify(again).Unwrap() == text}")
+
+    // Errors say what is wrong and where.
+    for (bad in ["a = ", "a = 1\na = 2", "[t]\n[t]"]) {
+        match (Toml.Parse(bad)) {
+            Ok(_) => Console.Println("accepted: ${bad}"),
+            Err(e) => Console.Println("error: ${e.Message()}"),
+        }
+    }
+}

@@ -1,0 +1,6 @@
+rect with area 6.0
+a square of side 3.0
+triangle with area 6.0
+triangle with area 0.0
+total area = 21.0
+biggest: rect with area 4.0

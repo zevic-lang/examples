@@ -1,0 +1,55 @@
+// Loop labels: break and continue can name the loop they apply to,
+// so an inner loop can end or skip for an outer one. Labels work on for, while and loop.
+
+module Main
+
+import Zevic.Console
+
+// First pair (a, b) with a * b == target; break@outer leaves both loops at once.
+fn FindFactors(target: I32) -> String {
+    mut found: String = "none"
+    outer@ for (a in 2..target.ToI64()) {
+        for (b in a..target.ToI64()) {
+            if (a * b > target.ToI64()) { continue@outer }
+            if (a * b == target.ToI64()) {
+                found = "${a} x ${b}"
+                break@outer
+            }
+        }
+    }
+    found
+}
+
+fn Main() {
+    // continue@outer skips the rest of a row; break@outer stops everything.
+    let rows: Array<Array<I32>> = [[1, 2, 3], [4, -5, 6], [7, 8, 9], [10, 11, 12]]
+    mut sum: I32 = 0
+    rows@ for (row in rows) {
+        for (x in row) {
+            if (x < 0) { continue@rows }
+            if (x == 8) { break@rows }
+            sum += x
+        }
+    }
+    // 1+2+3, then 4 (row skipped at -5), then 7, then stop at 8.
+    Console.Println("sum = ${sum}")
+
+    Console.Println("factors of 91: ${FindFactors(91)}")
+    Console.Println("factors of 13: ${FindFactors(13)}")
+
+    // Labels on while and loop; defer still runs for every iteration that is left.
+    mut i: I32 = 0
+    a@ while (i < 10) {
+        mut j: I32 = 0
+        b@ loop {
+            defer { Console.Println("leave inner i=${i} j=${j}") }
+            j += 1
+            if (j > 2) {
+                i += 3
+                continue@a
+            }
+            if (i > 5) { break@a }
+        }
+    }
+    Console.Println("i = ${i}")
+}

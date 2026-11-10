@@ -1,0 +1,65 @@
+// struct versus class.
+// A struct is a value: assigning or passing it makes a copy, and == compares the fields.
+// A class is a reference: assigning it makes a second name for the same object.
+
+module Main
+
+import Zevic.Console
+
+struct PointV {
+    X: I32
+    Y: I32
+
+    fn Init(x: I32, y: I32) {
+        this.X = x
+        this.Y = y
+    }
+
+    mut fn MoveBy(dx: I32) { this.X += dx }
+}
+
+class PointR {
+    X: I32
+    Y: I32
+
+    fn Init(x: I32, y: I32) {
+        this.X = x
+        this.Y = y
+    }
+
+    mut fn MoveBy(dx: I32) { this.X += dx }
+}
+
+// A struct parameter is a copy; only a `mut` parameter changes the copy.
+fn ShiftValue(mut p: PointV) -> I32 {
+    p.MoveBy(100)
+    p.X
+}
+
+// A class parameter shares the caller's object (`mut` only allows changing it).
+fn ShiftRef(mut p: PointR) {
+    p.X += 100
+}
+
+fn Main() {
+    // Value semantics.
+    mut a: PointV = PointV.New(1, 2)
+    let b: PointV = a
+    a.MoveBy(10)
+    Console.Println("struct: a.X=${a.X} b.X=${b.X}")
+    Console.Println("struct equal by fields: ${PointV.New(1, 2) == PointV.New(1, 2)}")
+    Console.Println("struct param: returned ${ShiftValue(a)}, a.X still ${a.X}")
+
+    // Reference semantics.
+    mut c: PointR = PointR.New(1, 2)
+    let d: PointR = c
+    c.MoveBy(10)
+    Console.Println("class: c.X=${c.X} d.X=${d.X}")
+    ShiftRef(c)
+    Console.Println("class param: c.X=${c.X}")
+
+    // Two different objects with equal fields are still different objects.
+    let e: PointR = PointR.New(1, 2)
+    let f: PointR = PointR.New(1, 2)
+    Console.Println("class same object: ${c == d}, equal fields only: ${e == f}")
+}

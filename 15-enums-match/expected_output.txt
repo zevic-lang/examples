@@ -1,0 +1,15 @@
+0: red
+1: green
+2: yellow
+3: red
+5 = 5
+2 + 3 = 5
+4 * 6 = 24
+-9 = -9
+0 is zero
+7 is one digit
+20 is round
+-3 is negative
+500 is big
+50 is other
+true and 5

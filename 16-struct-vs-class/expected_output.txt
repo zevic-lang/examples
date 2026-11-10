@@ -1,0 +1,6 @@
+struct: a.X=11 b.X=1
+struct equal by fields: true
+struct param: returned 111, a.X still 11
+class: c.X=11 d.X=11
+class param: c.X=111
+class same object: true, equal fields only: false

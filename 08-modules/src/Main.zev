@@ -8,9 +8,9 @@
 
 module Main
 
-import Zevic.Console
 import Greeter.Util.Math as M
 import Greeter.Util.Text
+import Zevic.Console
 
 fn Main() {
     // With "as", use the short name. Without it, write the full path.

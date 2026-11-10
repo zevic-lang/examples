@@ -1,0 +1,138 @@
+// A generic singly linked list with a head and a tail pointer.
+// Shows: a generic class, Option<Node<T>> links, mut methods, and Iterable so that
+// `for` and Map/Filter/Reduce work on the list.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class Node<T> {
+    Value: T
+    Next: Option<Node<T>> = None
+
+    fn Init(value: T) {
+        this.Value = value
+    }
+}
+
+class ListIter<T> : Iterator<T> {
+    cur: Option<Node<T>>
+
+    fn Init(start: Option<Node<T>>) { this.cur = start }
+
+    mut fn Next() -> Option<T> {
+        match (this.cur) {
+            Some(node) => {
+                this.cur = node.Next
+                Some(node.Value)
+            },
+            None => None,
+        }
+    }
+}
+
+class LinkedList<T> : Iterable<T> {
+    head: Option<Node<T>> = None
+    tail: Option<Node<T>> = None
+    count: I64 = 0
+
+    fn Len() -> I64 { this.count }
+
+    fn Iter() -> Iterator<T> { ListIter<T>.New(this.head) }
+
+    mut fn PushFront(v: T) {
+        mut n: Node<T> = Node<T>.New(v)
+        n.Next = this.head
+        if (this.count == 0) { this.tail = Some(n) }
+        this.head = Some(n)
+        this.count += 1
+    }
+
+    mut fn PushBack(v: T) {
+        mut n: Node<T> = Node<T>.New(v)
+        match (this.tail) {
+            Some(t) => {
+                mut last: Node<T> = t
+                last.Next = Some(n)
+            },
+            None => { this.head = Some(n) },
+        }
+        this.tail = Some(n)
+        this.count += 1
+    }
+
+    mut fn PopFront() -> Option<T> {
+        match (this.head) {
+            Some(n) => {
+                this.head = n.Next
+                if (this.count == 1) { this.tail = None }
+                this.count -= 1
+                Some(n.Value)
+            },
+            None => None,
+        }
+    }
+
+    // Reverses the links in place.
+    mut fn Reverse() {
+        mut prev: Option<Node<T>> = None
+        mut cur: Option<Node<T>> = this.head
+        this.tail = this.head
+        loop {
+            match (cur) {
+                Some(n) => {
+                    mut node: Node<T> = n
+                    let next: Option<Node<T>> = node.Next
+                    node.Next = prev
+                    prev = cur
+                    cur = next
+                },
+                None => break,
+            }
+        }
+        this.head = prev
+    }
+}
+
+fn Show(label: String, list: LinkedList<I32>) {
+    let items: Array<String> = list.Map((x: I32) => "${x}")
+    Console.Println("${label}: [${items.Join(", ")}] (len ${list.Len()})")
+}
+
+fn Main() {
+    mut list: LinkedList<I32> = LinkedList<I32>.New()
+    for (x in [3, 4, 5]) {
+        list.PushBack(x.ToI32Wrap())
+    }
+    list.PushFront(2)
+    list.PushFront(1)
+    Show("built", list)
+
+    list.Reverse()
+    Show("reversed", list)
+    list.PushBack(0)
+    Show("push back after reverse", list)
+
+    // Iterable gives the usual helpers for free.
+    Console.Println("sum = ${list.Reduce(0, (acc: I32, x: I32) => acc + x)}")
+    Console.Println("even = ${list.Filter((x: I32) => x % 2 == 0).Len()}")
+    Console.Println("has 4 = ${list.Any((x: I32) => x == 4)}")
+
+    mut popped: Array<String> = []
+    loop {
+        match (list.PopFront()) {
+            Some(v) => popped.Push("${v}"),
+            None => break,
+        }
+    }
+    Console.Println("popped: ${popped.Join(" ")}, len now ${list.Len()}")
+
+    // The same class works for other element types.
+    mut words: LinkedList<String> = LinkedList<String>.New()
+    words.PushBack("one")
+    words.PushBack("two")
+    for (w in words) {
+        Console.Println("word ${w}")
+    }
+}

@@ -1,0 +1,80 @@
+// Binary search on a sorted array: the hand-written loop, a recursive version,
+// "lower bound" for the insertion point, and the built-in Array.BinarySearch.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+// Returns the index of x, or None.
+fn Search(a: Array<I32>, x: I32) -> Option<I64> {
+    mut lo: I64 = 0
+    mut hi: I64 = a.Len() - 1
+    while (lo <= hi) {
+        let mid: I64 = lo + (hi - lo) / 2
+        if (a[mid] == x) {
+            return Some(mid)
+        } else if (a[mid] < x) {
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    None
+}
+
+// Same idea, recursive, on the half-open range [lo, hi).
+fn SearchRec(a: Array<I32>, x: I32, lo: I64, hi: I64) -> Option<I64> {
+    if (lo >= hi) { return None }
+    let mid: I64 = lo + (hi - lo) / 2
+    if (a[mid] == x) { return Some(mid) }
+    if (a[mid] < x) { return SearchRec(a, x, mid + 1, hi) }
+    SearchRec(a, x, lo, mid)
+}
+
+// First index whose value is >= x (where x would be inserted).
+fn LowerBound(a: Array<I32>, x: I32) -> I64 {
+    mut lo: I64 = 0
+    mut hi: I64 = a.Len()
+    while (lo < hi) {
+        let mid: I64 = lo + (hi - lo) / 2
+        if (a[mid] < x) { lo = mid + 1 } else { hi = mid }
+    }
+    lo
+}
+
+fn Describe(r: Option<I64>) -> String {
+    match (r) {
+        Some(i) => "found at ${i}",
+        None => "not found",
+    }
+}
+
+fn Main() {
+    let a: Array<I32> = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    for (x in [2, 13, 29, 4, 30, 1]) {
+        let v: I32 = x.ToI32Wrap()
+        Console.Println("search ${v}: ${Describe(Search(a, v))} | rec: ${Describe(SearchRec(a, v, 0, a.Len()))} | builtin: ${Describe(a.BinarySearch(v))}")
+    }
+
+    Console.Println("insertion point of 12 = ${LowerBound(a, 12)}")
+    Console.Println("insertion point of 1 = ${LowerBound(a, 1)}")
+    Console.Println("insertion point of 100 = ${LowerBound(a, 100)}")
+
+    // Keep an array sorted while inserting.
+    mut sorted: Array<I32> = []
+    for (x in [8, 3, 10, 1, 6]) {
+        sorted.Insert(LowerBound(sorted, x.ToI32Wrap()), x.ToI32Wrap())
+    }
+    Console.Println("kept sorted: ${sorted.Map((x: I32) => "${x}").Join(" ")}")
+
+    // Binary search also finds a boundary in a monotonic condition: integer square root.
+    let n: I64 = 1000
+    mut lo: I64 = 0
+    mut hi: I64 = n
+    while (lo < hi) {
+        let mid: I64 = (lo + hi + 1) / 2
+        if (mid * mid <= n) { lo = mid } else { hi = mid - 1 }
+    }
+    Console.Println("isqrt(${n}) = ${lo}")
+}

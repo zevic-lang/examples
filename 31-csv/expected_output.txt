@@ -1,0 +1,16 @@
+rows: 3
+  2 fields: [name] [note]
+  2 fields: [Ada] [likes commas, and "quotes"]
+  2 fields: [Bob] [two
+lines]
+Taro lives in Tokyo and is 30
+Hanako lives in Osaka and is 25
+total age: 55
+semicolon: 3 fields, last is c;d
+id,text
+1,plain
+2,"with,comma"
+3,"say ""hi"""
+round trip equal: true
+error kind: Invalid
+file round trip: true

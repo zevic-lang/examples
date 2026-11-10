@@ -1,0 +1,77 @@
+// Shortest path in a grid maze with breadth-first search. The maze comes from a
+// multi-line string; the path is drawn with '*' on top of it.
+// Shows: Text.Lines, a queue as an Array plus a head index, parent links for path recovery.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+let MazeText: String = "" "
+    S.#.......
+    .##.####.#
+    ....#..#..
+    .####.##.#
+    ....#....#
+    ###.####.#
+    ....#...#.
+    .##...#...
+    .#.####.#.
+    ...#....#E
+    " ""
+
+fn Main() {
+    let rows: Array<String> = Text.Lines(MazeText)
+    let h: I64 = rows.Len()
+    let w: I64 = rows[0].CharCount()
+    mut grid: Array<Array<Char>> = []
+    mut start: I64 = 0
+    mut goal: I64 = 0
+    for (r in 0..h) {
+        let line: Array<Char> = Text.ToChars(rows[r])
+        for (c in 0..w) {
+            if (line[c] == 'S') { start = r * w + c }
+            if (line[c] == 'E') { goal = r * w + c }
+        }
+        grid.Push(line)
+    }
+
+    // parent[i] = cell we came from, -1 = not visited yet
+    mut parent: Array<I64> = Array<I64>.Repeat(-1, w * h)
+    mut queue: Array<I64> = [start]
+    mut head: I64 = 0
+    parent[start] = start
+    let dr: Array<I64> = [-1, 1, 0, 0]
+    let dc: Array<I64> = [0, 0, -1, 1]
+    while (head < queue.Len() && parent[goal] == -1) {
+        let cur: I64 = queue[head]
+        head += 1
+        for (k in 0..4) {
+            let nr: I64 = cur / w + dr[k]
+            let nc: I64 = cur % w + dc[k]
+            if (nr < 0 || nr >= h || nc < 0 || nc >= w) { continue }
+            if (grid[nr][nc] == '#') { continue }
+            let next: I64 = nr * w + nc
+            if (parent[next] != -1) { continue }
+            parent[next] = cur
+            queue.Push(next)
+        }
+    }
+
+    if (parent[goal] == -1) {
+        Console.Println("no path")
+        return
+    }
+    mut steps: I64 = 0
+    mut at: I64 = parent[goal]
+    while (at != start) {
+        grid[at / w][at % w] = '*'
+        at = parent[at]
+        steps += 1
+    }
+    Console.Println("shortest path: ${steps + 1} moves, ${head} cells explored")
+    for (row in grid) {
+        Console.Println(Text.FromChars(row))
+    }
+}

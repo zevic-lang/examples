@@ -1,0 +1,115 @@
+// Dijkstra's shortest paths on a weighted directed graph, using a hand-written
+// binary min-heap as the priority queue.
+// Shows: a struct as heap entry, sift up / sift down, an adjacency list, path recovery.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+// A heap entry: a node and the distance it was queued with.
+struct Entry {
+    Node: I64
+    Dist: I64
+
+    fn Init(node: I64, dist: I64) {
+        this.Node = node
+        this.Dist = dist
+    }
+}
+
+// A binary min-heap stored in an array: the children of i are 2i+1 and 2i+2.
+class MinHeap {
+    items: Array<Entry> = []
+
+    fn Len() -> I64 { this.items.Len() }
+
+    mut fn Push(e: Entry) {
+        this.items.Push(e)
+        mut i: I64 = this.items.Len() - 1
+        while (i > 0) {
+            let parent: I64 = (i - 1) / 2
+            if (this.items[parent].Dist <= this.items[i].Dist) { break }
+            this.items.Swap(parent, i)
+            i = parent
+        }
+    }
+
+    mut fn Pop() -> Option<Entry> {
+        let n: I64 = this.items.Len()
+        if (n == 0) { return None }
+        let top: Entry = this.items[0]
+        let last: Entry = this.items.Pop().Unwrap()
+        if (n > 1) {
+            this.items[0] = last
+            mut i: I64 = 0
+            loop {
+                let l: I64 = 2 * i + 1
+                let r: I64 = l + 1
+                mut smallest: I64 = i
+                if (l < this.items.Len() && this.items[l].Dist < this.items[smallest].Dist) { smallest = l }
+                if (r < this.items.Len() && this.items[r].Dist < this.items[smallest].Dist) { smallest = r }
+                if (smallest == i) { break }
+                this.items.Swap(i, smallest)
+                i = smallest
+            }
+        }
+        Some(top)
+    }
+}
+
+struct Edge {
+    To: I64
+    Weight: I64
+
+    fn Init(to: I64, weight: I64) {
+        this.To = to
+        this.Weight = weight
+    }
+}
+
+fn Main() {
+    let names: Array<String> = ["A", "B", "C", "D", "E", "F"]
+    // graph[u] lists the edges that leave u.
+    mut graph: Array<Array<Edge>> = []
+    for (i in 0..names.Len()) {
+        graph.Push([])
+    }
+    let edges: Array<(I64, I64, I64)> = [(0, 1, 7), (0, 2, 9), (0, 5, 14), (1, 2, 10), (1, 3, 15), (2, 3, 11), (2, 5, 2), (3, 4, 6), (5, 4, 9)]
+    for ((u, v, w) in edges) {
+        graph[u].Push(Edge.New(v, w))
+    }
+
+    let inf: I64 = 1000000
+    mut dist: Array<I64> = Array<I64>.Repeat(inf, names.Len())
+    mut prev: Array<I64> = Array<I64>.Repeat(-1, names.Len())
+    mut heap: MinHeap = MinHeap.New()
+    dist[0] = 0
+    heap.Push(Entry.New(0, 0))
+    mut pops: I64 = 0
+    while (heap.Len() > 0) {
+        let e: Entry = heap.Pop().Unwrap()
+        pops += 1
+        // A stale entry: a shorter way to this node was found after it was queued.
+        if (e.Dist > dist[e.Node]) { continue }
+        for (edge in graph[e.Node]) {
+            let nd: I64 = e.Dist + edge.Weight
+            if (nd < dist[edge.To]) {
+                dist[edge.To] = nd
+                prev[edge.To] = e.Node
+                heap.Push(Entry.New(edge.To, nd))
+            }
+        }
+    }
+    Console.Println("heap pops: ${pops}")
+
+    for (t in 0..names.Len()) {
+        mut path: Array<String> = []
+        mut at: I64 = t
+        while (at != -1) {
+            path.Push(names[at])
+            at = prev[at]
+        }
+        Console.Println("A -> ${names[t]}: distance ${dist[t]}, path ${path.Reversed().Join(" ")}")
+    }
+}

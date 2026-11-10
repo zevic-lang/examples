@@ -1,0 +1,38 @@
+// StringBuilder builds a long string piece by piece without copying it at every step.
+// It is part of the prelude, so no import is needed for it.
+
+module Main
+
+import Zevic.Console
+
+fn Main() {
+    mut sb: StringBuilder = StringBuilder.New()
+    sb.Append("hello")
+    sb.AppendChar(' ')
+    sb.AppendLine("world")
+    sb.AppendRepeat("ab", 3)
+    Console.Println(sb.ToString())
+    Console.Println("length: ${sb.Len()}")
+
+    // Cut the content back to 5 bytes, or start over.
+    sb.Truncate(5)
+    Console.Println("truncated: ${sb.ToString()}")
+    sb.Clear()
+    Console.Println("empty after Clear: ${sb.IsEmpty()}")
+
+    // A typical use: join many pieces in a loop.
+    mut list: StringBuilder = StringBuilder.New()
+    for (i in 1..6) {
+        if (i > 1) { list.Append(", ") }
+        list.Append("item${i}")
+    }
+    Console.Println(list.ToString())
+
+    // Build a multi-line text.
+    mut table: StringBuilder = StringBuilder.New()
+    for (i in 1..4) {
+        table.Append("${i} x ${i} = ${i * i}")
+        table.AppendChar('\n')
+    }
+    Console.Print(table.ToString())
+}

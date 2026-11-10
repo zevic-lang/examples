@@ -1,0 +1,151 @@
+// A binary search tree: insert, search, in-order traversal, height and delete.
+// Shows: a recursive class (children are Option<Node>), recursion that returns the new
+// subtree, and the three cases of deleting a node.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class Node {
+    Value: I32
+    Left: Option<Node> = None
+    Right: Option<Node> = None
+
+    fn Init(value: I32) {
+        this.Value = value
+    }
+}
+
+// Returns the subtree that results from inserting v. Duplicates are ignored.
+fn Insert(tree: Option<Node>, v: I32) -> Option<Node> {
+    match (tree) {
+        None => Some(Node.New(v)),
+        Some(n) => {
+            mut node: Node = n
+            if (v < node.Value) {
+                node.Left = Insert(node.Left, v)
+            } else if (v > node.Value) {
+                node.Right = Insert(node.Right, v)
+            }
+            Some(node)
+        },
+    }
+}
+
+fn Contains(tree: Option<Node>, v: I32) -> Bool {
+    match (tree) {
+        None => false,
+        Some(n) => {
+            if (v == n.Value) {
+                true
+            } else if (v < n.Value) {
+                Contains(n.Left, v)
+            } else {
+                Contains(n.Right, v)
+            }
+        },
+    }
+}
+
+// Left, node, right: gives the values in increasing order.
+fn InOrder(tree: Option<Node>, mut out: Array<I32>) {
+    match (tree) {
+        None => {},
+        Some(n) => {
+            InOrder(n.Left, out)
+            out.Push(n.Value)
+            InOrder(n.Right, out)
+        },
+    }
+}
+
+fn Height(tree: Option<Node>) -> I64 {
+    match (tree) {
+        None => 0,
+        Some(n) => {
+            let l: I64 = Height(n.Left)
+            let r: I64 = Height(n.Right)
+            1 + (if (l > r) { l } else { r })
+        },
+    }
+}
+
+fn MinValue(n: Node) -> I32 {
+    match (n.Left) {
+        None => n.Value,
+        Some(l) => MinValue(l),
+    }
+}
+
+// Returns the subtree without v.
+fn Delete(tree: Option<Node>, v: I32) -> Option<Node> {
+    match (tree) {
+        None => None,
+        Some(n) => {
+            mut node: Node = n
+            if (v < node.Value) {
+                node.Left = Delete(node.Left, v)
+                Some(node)
+            } else if (v > node.Value) {
+                node.Right = Delete(node.Right, v)
+                Some(node)
+            } else {
+                // Found it. Zero or one child: the child takes its place.
+                match (node.Left) {
+                    None => node.Right,
+                    Some(_) => {
+                        match (node.Right) {
+                            None => node.Left,
+                            Some(r) => {
+                                // Two children: copy the smallest value of the right side here,
+                                // then delete that value from the right side.
+                                let m: I32 = MinValue(r)
+                                node.Value = m
+                                node.Right = Delete(node.Right, m)
+                                Some(node)
+                            },
+                        }
+                    },
+                }
+            }
+        },
+    }
+}
+
+fn Text(tree: Option<Node>) -> String {
+    mut items: Array<I32> = []
+    InOrder(tree, items)
+    items.Map((x: I32) => "${x}").Join(" ")
+}
+
+fn Main() {
+    //            50
+    //         30    70
+    //        20 40 60 80
+    mut tree: Option<Node> = None
+    for (v in [50, 30, 70, 20, 40, 60, 80, 30, 65]) {
+        tree = Insert(tree, v.ToI32Wrap())
+    }
+    Console.Println("in order: ${Text(tree)}")
+    Console.Println("height: ${Height(tree)}")
+    Console.Println("contains 60: ${Contains(tree, 60)}, contains 65: ${Contains(tree, 65)}, contains 66: ${Contains(tree, 66)}")
+
+    tree = Delete(tree, 20)
+    Console.Println("delete 20 (leaf): ${Text(tree)}")
+    tree = Delete(tree, 60)
+    Console.Println("delete 60 (one child): ${Text(tree)}")
+    tree = Delete(tree, 50)
+    Console.Println("delete 50 (two children, the root): ${Text(tree)}")
+    Console.Println("root is now ${tree.Unwrap().Value}")
+    tree = Delete(tree, 99)
+    Console.Println("delete 99 (missing): ${Text(tree)}")
+    Console.Println("height: ${Height(tree)}")
+
+    // Sorted input gives a degenerate tree: the height equals the number of values.
+    mut line: Option<Node> = None
+    for (v in 1..=6) {
+        line = Insert(line, v.ToI32Wrap())
+    }
+    Console.Println("sorted insertion height: ${Height(line)}")
+}

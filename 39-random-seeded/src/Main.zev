@@ -1,0 +1,60 @@
+// Seeded random numbers. Zevic.Random is a SplitMix64 generator: the same seed
+// always gives the same series, on every machine, so the output below is fixed.
+// Use Rng.Seeded() when you want a different series on every run instead.
+// Modules: Zevic.Random.
+
+module Main
+
+import Zevic.Console
+import Zevic.Random
+
+fn Main() {
+    // Raw 64-bit values for a known seed.
+    mut raw: Random.Rng = Random.Rng.New(1234567)
+    Console.Println("raw: ${raw.NextU64()} ${raw.NextU64()} ${raw.NextU64()}")
+
+    // Two generators with the same seed stay in step.
+    mut a: Random.Rng = Random.Rng.New(7)
+    mut b: Random.Rng = Random.Rng.New(7)
+    mut same: Bool = true
+    for (i in 0..100) {
+        if (a.Int(0, 1000) != b.Int(0, 1000)) { same = false }
+    }
+    Console.Println("same seed, same numbers: ${same}")
+
+    // Int(low, high) is low <= x < high: ten rolls of a die.
+    mut dice: Random.Rng = Random.Rng.New(42)
+    mut rolls: Array<String> = []
+    for (i in 0..10) {
+        rolls.Push("${dice.Int(1, 7)}")
+    }
+    Console.Println("rolls: ${rolls.Join(" ")}")
+
+    // Float() is in [0, 1). Print whole thousandths to avoid long decimals.
+    mut fl: Random.Rng = Random.Rng.New(2024)
+    mut parts: Array<String> = []
+    for (i in 0..4) {
+        parts.Push("${(fl.Float() * 1000.0).ToI64()}")
+    }
+    Console.Println("floats x1000: ${parts.Join(" ")}")
+
+    // Shuffle and Pick use the generator, so they are reproducible too.
+    mut deck: Array<I64> = [1, 2, 3, 4, 5, 6, 7, 8]
+    mut sh: Random.Rng = Random.Rng.New(99)
+    Random.Shuffle(sh, deck)
+    Console.Println("shuffled: ${deck.Map((x: I64) => "${x}").Join(" ")}")
+    let words: Array<String> = ["red", "green", "blue"]
+    Console.Println("pick: ${Random.Pick(sh, words).Unwrap()}")
+
+    // Restarting with the seed replays the series.
+    mut again: Random.Rng = Random.Rng.New(42)
+    mut replay: Array<String> = []
+    for (i in 0..10) {
+        replay.Push("${again.Int(1, 7)}")
+    }
+    Console.Println("replay equal: ${replay == rolls}")
+
+    // An unseeded generator is different every run, so only its range is shown.
+    mut free: Random.Rng = Random.Rng.Seeded()
+    Console.Println("seeded value in range: ${free.Int(0, 10) < 10}")
+}

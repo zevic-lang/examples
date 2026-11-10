@@ -7,7 +7,7 @@ import Zevic.Console
 
 // A function that can fail returns Result<T, Error>.
 fn ParseAge(text: String) -> Result<I32, Error> {
-    let n: I32 = text.ToI32()?          // ? returns the Err from this function right away
+    let n: I32 = text.ToI32()? // ? returns the Err from this function right away
     if (n < 0 || n > 150) {
         return Err(Error.New(ErrorKind.Invalid, "age out of range: ${n}"))
     }

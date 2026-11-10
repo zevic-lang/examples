@@ -1,0 +1,91 @@
+// Enums and match.
+// An enum value is one of several variants, each of which may carry data.
+// match must cover every case; patterns can be literals, ranges, alternatives,
+// guards (`if`) and tuples.
+
+module Main
+
+import Zevic.Console
+
+enum Light { Red, Yellow, Green }
+
+enum Expr {
+    Num(I64),
+    Add(I64, I64),
+    Mul(I64, I64),
+    Neg(I64),
+
+    // Methods live inside the enum; `this` is matched like any value.
+    fn Eval() -> I64 {
+        match (this) {
+            Expr.Num(n) => n,
+            Expr.Add(a, b) => a + b,
+            Expr.Mul(a, b) => a * b,
+            Expr.Neg(a) => -a,
+        }
+    }
+
+    fn Show() -> String {
+        match (this) {
+            Expr.Num(n) => "${n}",
+            Expr.Add(a, b) => "${a} + ${b}",
+            Expr.Mul(a, b) => "${a} * ${b}",
+            Expr.Neg(a) => "-${a}",
+        }
+    }
+}
+
+fn Next(l: Light) -> Light {
+    match (l) {
+        Light.Red => Light.Green,
+        Light.Green => Light.Yellow,
+        Light.Yellow => Light.Red,
+    }
+}
+
+fn Name(l: Light) -> String {
+    match (l) {
+        Light.Red => "red",
+        Light.Yellow => "yellow",
+        Light.Green => "green",
+    }
+}
+
+// Literals, ranges, alternatives and guards on numbers.
+fn Classify(n: I32) -> String {
+    match (n) {
+        0 => "zero",
+        1..=9 => "one digit",
+        10 | 20 | 30 => "round",
+        x if (x < 0) => "negative",
+        x if (x > 100) => "big",
+        _ => "other",
+    }
+}
+
+fn Main() {
+    mut l: Light = Light.Red
+    for (i in 0..4) {
+        Console.Println("${i}: ${Name(l)}")
+        l = Next(l)
+    }
+
+    let exprs: Array<Expr> = [Expr.Num(5), Expr.Add(2, 3), Expr.Mul(4, 6), Expr.Neg(9)]
+    for (e in exprs) {
+        Console.Println("${e.Show()} = ${e.Eval()}")
+    }
+
+    let tests: Array<I32> = [0, 7, 20, -3, 500, 50]
+    for (n in tests) {
+        Console.Println("${n} is ${Classify(n)}")
+    }
+
+    // match is an expression; tuples can be matched too.
+    let pair: (Bool, I32) = (true, 5)
+    let msg: String = match (pair) {
+        (true, 0) => "true zero",
+        (true, n) => "true and ${n}",
+        (false, _) => "false",
+    }
+    Console.Println(msg)
+}

@@ -1,0 +1,15 @@
+bytes 15, chars 10, array 10
+round trip: héllo, 世界!
+char 1: é, char 8: 界
+char 99 missing: true
+slice 7..9: [世界], slice 0..2: [hé]
+reversed: !界世 ,olléh
+true true false true
+true false ascii of 世: false
+Q q
+digit value of f in base 16: 15
+g in base 16 is a digit: false
+U+4E16 is 世
+surrogate is invalid: true
+utf8 length: a=1 é=2 世=3 U+1F600=4
+ascii 9, other 4

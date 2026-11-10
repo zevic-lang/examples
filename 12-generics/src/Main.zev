@@ -1,0 +1,81 @@
+// Generics: functions, classes and structs with type parameters,
+// and constraints (Comparable, Equatable) that say what a type must be able to do.
+
+module Main
+
+import Zevic.Console
+
+// A generic function with a constraint: T must have Compare.
+fn Max<T: Comparable>(a: T, b: T) -> T {
+    if (a.Compare(b) >= 0) { a } else { b }
+}
+
+// Largest element of an array (None when it is empty).
+fn Largest<T: Comparable>(items: Array<T>) -> Option<T> {
+    if (items.Len() == 0) { return None }
+    mut best: T = items[0]
+    for (x in items) {
+        best = Max(best, x)
+    }
+    Some(best)
+}
+
+fn AreEqual<T: Equatable>(a: T, b: T) -> Bool {
+    a.Equals(b)
+}
+
+// A generic class.
+class Stack<T> {
+    items: Array<T> = []
+
+    mut fn Push(x: T) { this.items.Push(x) }
+    mut fn Pop() -> Option<T> { this.items.Pop() }
+    fn Len() -> I64 { this.items.Len() }
+}
+
+// A generic struct with two parameters.
+struct Pair<A, B> {
+    First: A
+    Second: B
+
+    fn Init(a: A, b: B) {
+        this.First = a
+        this.Second = b
+    }
+
+    fn Swap() -> Pair<B, A> {
+        Pair.New(this.Second, this.First)
+    }
+}
+
+// A user type becomes Comparable by providing Equals and Compare.
+class Version : Comparable {
+    n: I32
+    fn Init(n: I32) { this.n = n }
+    fn Equals(other: Version) -> Bool { this.n == other.n }
+    fn Compare(other: Version) -> I32 { this.n - other.n }
+}
+
+fn Main() {
+    Console.Println("${Max(3, 9)} ${Max("pear", "apple")} ${Max(2.5, 1.5)}")
+    Console.Println("largest: ${Largest([4, 8, 1]).UnwrapOr(-1)}")
+    let none: Array<I64> = []
+    Console.Println("largest of nothing: ${Largest(none).UnwrapOr(-1)}")
+    Console.Println("${AreEqual(4, 4)} ${AreEqual("a", "b")}")
+
+    let v: Version = Max(Version.New(2), Version.New(7))
+    Console.Println("max version: ${v.n}")
+
+    // The type argument is usually inferred; it can also be written out.
+    mut s: Stack<String> = Stack.New()
+    s.Push("a")
+    s.Push("b")
+    Console.Println("popped ${s.Pop().UnwrapOr("-")}, left ${s.Len()}")
+    mut nums: Stack<I32> = Stack<I32>.New()
+    nums.Push(7)
+    Console.Println("numbers left ${nums.Len()}")
+
+    let p: Pair<String, I32> = Pair.New("age", 30)
+    let q: Pair<I32, String> = p.Swap()
+    Console.Println("${p.First}=${p.Second}  ${q.First}=${q.Second}")
+}

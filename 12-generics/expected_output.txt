@@ -1,0 +1,8 @@
+9 pear 2.5
+largest: 8
+largest of nothing: -1
+true false
+max version: 7
+popped b, left 1
+numbers left 1
+age=30  30=age

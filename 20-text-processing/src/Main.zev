@@ -1,0 +1,43 @@
+// Text.* functions for searching, splitting, trimming, replacing and padding strings.
+// Modules: Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+fn Main() {
+    let s: String = "  The quick brown fox  "
+
+    // Trimming.
+    Console.Println("[${Text.Trim(s)}] [${Text.TrimStart(s)}] [${Text.TrimEnd(s)}]")
+    Console.Println("${Text.TrimPrefix("foobar", "foo")} ${Text.TrimSuffix("foobar", "bar")}")
+
+    // Searching returns Option positions (byte offsets).
+    let t: String = Text.Trim(s)
+    Console.Println("contains quick: ${Text.Contains(t, "quick")}")
+    Console.Println("starts with The: ${Text.StartsWith(t, "The")}, ends with fox: ${Text.EndsWith(t, "fox")}")
+    Console.Println("index of brown: ${Text.IndexOf(t, "brown").Unwrap()}")
+    Console.Println("index of cat: ${Text.IndexOf(t, "cat").IsNone()}")
+    Console.Println("last o: ${Text.LastIndexOf(t, "o").Unwrap()}, count of o: ${Text.Count(t, "o")}")
+
+    // Splitting and joining.
+    let parts: Array<String> = Text.Split("a,b,,c", ",")
+    Console.Println("${parts.Len()} parts: ${parts.Join("|")}")
+    Console.Println(Text.SplitN("a,b,c,d", ",", 3).Join("|"))
+    Console.Println(Text.Words("  one  two\tthree\n").Join("|"))
+    Console.Println("lines: ${Text.Lines("x\ny\nz").Len()}")
+
+    // Replacing and case.
+    Console.Println(Text.Replace("a.a.a", ".", "-"))
+    Console.Println(Text.ReplaceFirst("a.a.a", ".", "-"))
+    Console.Println("${Text.ToUpper(t)} / ${Text.ToLower(t)} / ${Text.Capitalize("zevic")}")
+    Console.Println("equal ignoring case: ${Text.EqualsIgnoreCase("HeLLo", "hello")}")
+
+    // Padding, centering, repeating and truncating.
+    Console.Println("[${Text.PadLeft("42", 6, '0')}] [${Text.PadRight("ab", 5, '.')}] [${Text.Center("zevic", 9, '*')}]")
+    Console.Println(Text.Repeat("=-", 5))
+    Console.Println("${Text.Truncate("hello world", 8, "...")} ${Text.Truncate("short", 8, "...")}")
+    Console.Println("blank: ${Text.IsBlank("  \t")} ${Text.IsBlank(" a ")}")
+    Console.Println(Text.Reverse("stressed"))
+}

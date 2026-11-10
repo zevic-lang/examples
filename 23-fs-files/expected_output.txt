@@ -1,0 +1,10 @@
+temp dir exists: true
+size: 13
+first
+second
+alpha,beta,gamma
+notes still there: false
+tree: list.txt sub sub/copy.txt sub/deep sub/deep/moved.txt
+dup has: copy.txt deep
+reading a missing file fails
+removed: true

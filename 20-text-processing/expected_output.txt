@@ -1,0 +1,20 @@
+[The quick brown fox] [The quick brown fox  ] [  The quick brown fox]
+bar foo
+contains quick: true
+starts with The: true, ends with fox: true
+index of brown: 10
+index of cat: true
+last o: 17, count of o: 2
+4 parts: a|b||c
+a|b|c,d
+one|two|three
+lines: 3
+a-a-a
+a-a.a
+THE QUICK BROWN FOX / the quick brown fox / Zevic
+equal ignoring case: true
+[000042] [ab...] [**zevic**]
+=-=-=-=-=-
+hello... short
+blank: true false
+desserts

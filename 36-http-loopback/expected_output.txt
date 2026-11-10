@@ -1,0 +1,6 @@
+GET  200 hello, query is [name=zevic] ok=true
+POST 201 POST some data
+PUT  201 PUT new data header=abc
+GET  404 no such path /missing ok=false
+refused: Io
+server stopped

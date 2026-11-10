@@ -1,0 +1,9 @@
+3 4 + = 7.0
+5 1 2 + 4 * + 3 - = 14.0
+2 3 4 * + = 14.0
+10 4 / = 2.5
+1.5 2 * = 3.0
+1 0 / -> error: division by zero
+1 + -> error: '+' needs two numbers
+2 3 -> error: expected one result, the stack has 2
+4 2 ^ -> error: unknown operator '^'

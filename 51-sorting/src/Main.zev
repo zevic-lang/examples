@@ -1,0 +1,146 @@
+// Five classic sorting algorithms written by hand on the same data,
+// compared with the built-in Array.Sorted.
+// Shows: mut array parameters, Swap, Slice, recursion, Sorted and SortedBy.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+fn Join(a: Array<I32>) -> String {
+    a.Map((x: I32) => "${x}").Join(" ")
+}
+
+fn Show(label: String, a: Array<I32>) {
+    Console.Println("${label}: ${Join(a)}")
+}
+
+fn Bubble(mut a: Array<I32>) {
+    let n: I64 = a.Len()
+    for (i in 0..n) {
+        mut swapped: Bool = false
+        for (j in 0.. (n - 1 - i)) {
+            if (a[j] > a[j + 1]) {
+                a.Swap(j, j + 1)
+                swapped = true
+            }
+        }
+        if (!swapped) { break }
+    }
+}
+
+fn Insertion(mut a: Array<I32>) {
+    for (i in 1..a.Len()) {
+        let key: I32 = a[i]
+        mut j: I64 = i - 1
+        while (j >= 0 && a[j] > key) {
+            a[j + 1] = a[j]
+            j -= 1
+        }
+        a[j + 1] = key
+    }
+}
+
+fn Merge(a: Array<I32>) -> Array<I32> {
+    if (a.Len() <= 1) { return a }
+    let mid: I64 = a.Len() / 2
+    let left: Array<I32> = Merge(a.Slice(0, mid))
+    let right: Array<I32> = Merge(a.Slice(mid, a.Len()))
+    mut out: Array<I32> = []
+    mut i: I64 = 0
+    mut j: I64 = 0
+    while (i < left.Len() && j < right.Len()) {
+        if (left[i] <= right[j]) {
+            out.Push(left[i])
+            i += 1
+        } else {
+            out.Push(right[j])
+            j += 1
+        }
+    }
+    while (i < left.Len()) {
+        out.Push(left[i])
+        i += 1
+    }
+    while (j < right.Len()) {
+        out.Push(right[j])
+        j += 1
+    }
+    out
+}
+
+// Quick sort with the last element as pivot (Lomuto partition), in place.
+fn Quick(mut a: Array<I32>, lo: I64, hi: I64) {
+    if (lo >= hi) { return }
+    let pivot: I32 = a[hi]
+    mut p: I64 = lo
+    for (i in lo..hi) {
+        if (a[i] < pivot) {
+            a.Swap(i, p)
+            p += 1
+        }
+    }
+    a.Swap(p, hi)
+    Quick(a, lo, p - 1)
+    Quick(a, p + 1, hi)
+}
+
+fn SiftDown(mut a: Array<I32>, start: I64, end: I64) {
+    mut root: I64 = start
+    loop {
+        mut child: I64 = 2 * root + 1
+        if (child >= end) { break }
+        if (child + 1 < end && a[child] < a[child + 1]) { child += 1 }
+        if (a[root] >= a[child]) { break }
+        a.Swap(root, child)
+        root = child
+    }
+}
+
+fn Heap(mut a: Array<I32>) {
+    let n: I64 = a.Len()
+    mut i: I64 = n / 2 - 1
+    while (i >= 0) {
+        SiftDown(a, i, n)
+        i -= 1
+    }
+    mut end: I64 = n - 1
+    while (end > 0) {
+        a.Swap(0, end)
+        SiftDown(a, 0, end)
+        end -= 1
+    }
+}
+
+fn Main() {
+    let data: Array<I32> = [34, 7, 23, 32, 5, 62, 32, 7, -3, 0, 15, 99, 1]
+    Show("input    ", data)
+
+    mut b: Array<I32> = data.Slice(0, data.Len())
+    Bubble(b)
+    Show("bubble   ", b)
+
+    mut ins: Array<I32> = data.Slice(0, data.Len())
+    Insertion(ins)
+    Show("insertion", ins)
+
+    Show("merge    ", Merge(data))
+
+    mut q: Array<I32> = data.Slice(0, data.Len())
+    Quick(q, 0, q.Len() - 1)
+    Show("quick    ", q)
+
+    mut h: Array<I32> = data.Slice(0, data.Len())
+    Heap(h)
+    Show("heap     ", h)
+
+    let expected: Array<I32> = data.Sorted()
+    Show("Sorted   ", expected)
+    Console.Println("all equal: ${b == expected && ins == expected && Merge(data) == expected && q == expected && h == expected}")
+
+    // Sorted works on strings too, and SortedBy takes a comparison.
+    let words: Array<String> = ["pear", "fig", "apple", "kiwi"]
+    Console.Println(words.Sorted().Join(","))
+    Console.Println(words.SortedBy((x: String, y: String) => x.Len().Compare(y.Len())).Join(","))
+    Show("untouched", data)
+}

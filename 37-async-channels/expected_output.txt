@@ -1,0 +1,5 @@
+jobs handled by workers: 20
+results: 20
+sorted: 1 4 9 16 25 36 49 64 81 100 121 144 169 196 225 256 289 324 361 400
+sum: 2870
+closed and empty: true

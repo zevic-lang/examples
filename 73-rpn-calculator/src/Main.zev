@@ -1,0 +1,68 @@
+// A reverse Polish notation calculator.
+//
+// Shows a stack (an Array used with Push and Pop), match on strings, and error handling with
+// Result and the ? operator. Library modules: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+// Pops one number or fails with a message that names the operator.
+fn Pop(mut stack: Array<F64>, op: String) -> Result<F64, Error> {
+    stack.Pop().OkOr(Error.New(ErrorKind.Invalid, "'${op}' needs two numbers"))
+}
+
+// Applies a binary operator to the two numbers on top of the stack.
+fn Apply(mut stack: Array<F64>, op: String) -> Result<Unit, Error> {
+    let b: F64 = Pop(stack, op)?
+    let a: F64 = Pop(stack, op)?
+    match (op) {
+        "+" => stack.Push(a + b),
+        "-" => stack.Push(a - b),
+        "*" => stack.Push(a * b),
+        "/" => {
+            if (b == 0.0) {
+                return Err(Error.New(ErrorKind.Invalid, "division by zero"))
+            }
+            stack.Push(a / b)
+        },
+        _ => return Err(Error.New(ErrorKind.Invalid, "unknown operator '${op}'")),
+    }
+    Ok(())
+}
+
+// Evaluates a whole expression such as "3 4 + 2 *".
+fn Eval(text: String) -> Result<F64, Error> {
+    mut stack: Array<F64> = []
+    for (token in Text.Words(text)) {
+        match (token.ToF64()) {
+            Ok(n) => stack.Push(n),
+            Err(_) => Apply(stack, token)?,
+        }
+    }
+    if (stack.Len() != 1) {
+        return Err(Error.New(ErrorKind.Invalid, "expected one result, the stack has ${stack.Len()}"))
+    }
+    Ok(stack[0])
+}
+
+fn Main() {
+    let tests: Array<String> = [
+        "3 4 +",
+        "5 1 2 + 4 * + 3 -",
+        "2 3 4 * +",
+        "10 4 /",
+        "1.5 2 *",
+        "1 0 /",
+        "1 +",
+        "2 3",
+        "4 2 ^",
+    ]
+    for (t in tests) {
+        match (Eval(t)) {
+            Ok(v) => Console.Println("${t} = ${v}"),
+            Err(e) => Console.Println("${t} -> error: ${e.Message()}"),
+        }
+    }
+}

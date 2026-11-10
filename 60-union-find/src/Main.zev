@@ -1,0 +1,107 @@
+// Union-find (disjoint set union) with path compression and union by size.
+// Used twice: grouping elements, and Kruskal's minimum spanning tree.
+// Shows: a class with mut methods, iterative path compression, sorting tuples with SortBy.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class DisjointSet {
+    parent: Array<I64> = []
+    size: Array<I64> = []
+    Groups: I64
+
+    fn Init(n: I64) {
+        for (i in 0..n) {
+            this.parent.Push(i)
+            this.size.Push(1)
+        }
+        this.Groups = n
+    }
+
+    // The representative of x. Every node on the way is pointed straight at it.
+    mut fn Find(x: I64) -> I64 {
+        mut root: I64 = x
+        while (this.parent[root] != root) {
+            root = this.parent[root]
+        }
+        mut cur: I64 = x
+        while (this.parent[cur] != root) {
+            let next: I64 = this.parent[cur]
+            this.parent[cur] = root
+            cur = next
+        }
+        root
+    }
+
+    // Joins the sets of a and b. Returns false if they were already together.
+    mut fn Union(a: I64, b: I64) -> Bool {
+        mut ra: I64 = this.Find(a)
+        mut rb: I64 = this.Find(b)
+        if (ra == rb) { return false }
+        // Attach the smaller tree below the bigger one.
+        if (this.size[ra] < this.size[rb]) {
+            let t: I64 = ra
+            ra = rb
+            rb = t
+        }
+        this.parent[rb] = ra
+        this.size[ra] += this.size[rb]
+        this.Groups -= 1
+        true
+    }
+
+    mut fn Same(a: I64, b: I64) -> Bool {
+        this.Find(a) == this.Find(b)
+    }
+}
+
+fn Main() {
+    mut ds: DisjointSet = DisjointSet.New(10)
+    let pairs: Array<(I64, I64)> = [(0, 1), (2, 3), (1, 3), (4, 5), (6, 7), (5, 7), (0, 3), (8, 9)]
+    for ((a, b) in pairs) {
+        let merged: Bool = ds.Union(a, b)
+        Console.Println("union(${a}, ${b}): ${if (merged) { "merged" } else { "already together" }}, groups = ${ds.Groups}")
+    }
+    Console.Println("0 and 2 together: ${ds.Same(0, 2)}")
+    Console.Println("0 and 4 together: ${ds.Same(0, 4)}")
+
+    // Print the groups by looking at each element's representative.
+    mut byRoot: Map<I64, Array<I64>> = Map.New()
+    for (i in 0..10) {
+        let r: I64 = ds.Find(i)
+        match (byRoot.Get(r)) {
+            Some(members) => {
+                mut m: Array<I64> = members
+                m.Push(i)
+            },
+            None => byRoot.Set(r, [i]),
+        }
+    }
+    for ((root, members) in byRoot) {
+        Console.Println("group of ${members.Len()}: ${members.Map((x: I64) => "${x}").Join(" ")}")
+    }
+
+    Kruskal()
+}
+
+// Kruskal: take edges by increasing weight, skip those that would make a cycle.
+fn Kruskal() {
+    // (weight, u, v)
+    let edges: Array<(I64, I64, I64)> = [(4, 0, 1), (8, 0, 7), (11, 1, 7), (8, 1, 2), (7, 7, 8), (1, 7, 6), (2, 2, 8), (6, 8, 6), (4, 2, 5), (2, 6, 5), (7, 2, 3), (14, 3, 5), (9, 3, 4), (10, 5, 4)]
+    let sorted: Array<(I64, I64, I64)> = edges.SortedBy((x: (I64, I64, I64), y: (I64, I64, I64)) => {
+        let (wx, ux, vx): (I64, I64, I64) = x
+        let (wy, uy, vy): (I64, I64, I64) = y
+        wx.Compare(wy)
+    })
+    mut ds: DisjointSet = DisjointSet.New(9)
+    mut total: I64 = 0
+    for ((w, u, v) in sorted) {
+        if (ds.Union(u, v)) {
+            total += w
+            Console.Println("take ${u}-${v} (${w})")
+        }
+    }
+    Console.Println("minimum spanning tree weight: ${total}")
+}

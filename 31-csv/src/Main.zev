@@ -1,0 +1,55 @@
+// CSV: parse text with quoted fields, read rows as records keyed by the header,
+// write rows back (quoting only where needed) and round-trip through a file.
+// Modules: Zevic.Csv, Zevic.Fs, Zevic.Path.
+
+module Main
+
+import Zevic.Console
+import Zevic.Csv
+import Zevic.Fs
+import Zevic.Path
+
+fn Main() {
+    // Quoted fields may hold commas, doubled quotes and line breaks.
+    let text: String = "name,note\nAda,\"likes commas, and \"\"quotes\"\"\"\nBob,\"two\nlines\"\n"
+    let rows: Array<Array<String>> = Csv.Parse(text).Unwrap()
+    Console.Println("rows: ${rows.Len()}")
+    for (r in rows) {
+        Console.Println("  ${r.Len()} fields: ${r.Map((f: String) => "[${f}]").Join(" ")}")
+    }
+
+    // Records use the first row as the header.
+    let people: String = "name,age,city\nTaro,30,Tokyo\nHanako,25,Osaka\n"
+    let records: Array<Map<String, String>> = Csv.ParseRecords(people).Unwrap()
+    mut total: I64 = 0
+    for (rec in records) {
+        let age: I64 = rec["age"].ToI64().Unwrap()
+        total += age
+        Console.Println("${rec["name"]} lives in ${rec["city"]} and is ${age}")
+    }
+    Console.Println("total age: ${total}")
+
+    // Another separator.
+    let semi: Array<Array<String>> = Csv.ParseWith("a;b;\"c;d\"", ";").Unwrap()
+    Console.Println("semicolon: ${semi[0].Len()} fields, last is ${semi[0][2]}")
+
+    // Writing: only fields that need it are quoted.
+    let out: Array<Array<String>> = [["id", "text"], ["1", "plain"], ["2", "with,comma"], ["3", "say \"hi\""]]
+    let written: String = Csv.Stringify(out)
+    Console.Print(written)
+    Console.Println("round trip equal: ${Csv.Parse(written).Unwrap() == out}")
+
+    // Bad input is an error, not a crash.
+    match (Csv.Parse("a,\"unterminated")) {
+        Ok(_) => Console.Println("accepted?"),
+        Err(e) => Console.Println("error kind: ${e.Kind().ToString()}"),
+    }
+
+    // Files.
+    let dir: String = Fs.MakeTempDir("zevcsv-").Unwrap()
+    let file: String = Path.Join(dir, "table.csv")
+    Csv.WriteFile(file, out).Unwrap()
+    let back: Array<Array<String>> = Csv.ReadFile(file).Unwrap()
+    Console.Println("file round trip: ${back == out}")
+    Fs.RemoveAll(dir).Unwrap()
+}

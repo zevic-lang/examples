@@ -1,0 +1,41 @@
+// Measuring time. Instant is a point on a steady clock, Duration a length of time.
+// Real timings differ on every run, so the program prints only facts that always
+// hold, such as "at least as long as the sleep".
+// Modules: Zevic.Time.
+
+module Main
+
+import Zevic.Console
+import Zevic.Time
+
+fn Main() {
+    // Durations are plain values and can be built from several units.
+    let d: Time.Duration = Time.Duration.FromMillis(1500)
+    Console.Println("${d.Millis()} ms = ${d.Seconds()} s = ${d.Micros()} us = ${d.Nanos()} ns")
+    let total: Time.Duration = d.Add(Time.Duration.FromSeconds(2))
+    Console.Println("sum ${total.Millis()} ms, difference ${total.Sub(d).Millis()} ms")
+
+    // Measure a sleep with Now() and Elapsed().
+    let start: Time.Instant = Time.Now()
+    Time.Sleep(Time.Duration.FromMillis(40))
+    let spent: Time.Duration = start.Elapsed()
+    Console.Println("slept at least 40 ms: ${spent.Millis() >= 40}")
+
+    // Since() compares two instants; the later one is never earlier.
+    let later: Time.Instant = Time.Now()
+    Console.Println("clock moves forward: ${later.Since(start).Nanos() >= spent.Nanos()}")
+    Console.Println("elapsed >= 0: ${later.Elapsed().Nanos() >= 0}")
+
+    // Measure some work: the answer is exact, the time is not printed.
+    let t0: Time.Instant = Time.Now()
+    mut sum: I64 = 0
+    for (i in 1..=100000) {
+        sum += i
+    }
+    let work: Time.Duration = t0.Elapsed()
+    Console.Println("sum = ${sum}, took a non-negative time: ${work.Nanos() >= 0}")
+
+    // The wall clock counts from 1970; it can jump, so it is not for measuring.
+    Console.Println("wall clock after 2023: ${Time.UnixSeconds() > 1700000000}")
+    Console.Println("seconds and millis agree: ${Time.UnixMillis() / 1000 >= Time.UnixSeconds() - 1}")
+}

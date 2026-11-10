@@ -1,0 +1,11 @@
+sum = 17
+factors of 91: 7 x 13
+factors of 13: none
+leave inner i=0 j=1
+leave inner i=0 j=2
+leave inner i=3 j=3
+leave inner i=3 j=1
+leave inner i=3 j=2
+leave inner i=6 j=3
+leave inner i=6 j=1
+i = 6

@@ -1,0 +1,23 @@
+add10(5) = 15
+apply three times: 30
+apply a lambda: 32
+counters: 1 2 1 3
+total = 7
+closure gives 0
+closure gives 10
+closure gives 20
+work(false):
+  open
+  flush
+  close
+  ok 42
+work(true):
+  open
+  flush
+  close
+  error work failed
+body 0
+end of iteration 0
+end of iteration 1
+body 2
+end of iteration 2

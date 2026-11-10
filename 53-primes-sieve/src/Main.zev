@@ -1,0 +1,91 @@
+// The sieve of Eratosthenes with an Array<Bool>, plus trial division for comparison,
+// prime factorization and twin primes.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+// isPrime[i] is true when i is prime, for 0 <= i <= limit.
+fn Sieve(limit: I64) -> Array<Bool> {
+    mut isPrime: Array<Bool> = Array<Bool>.Repeat(true, limit + 1)
+    isPrime[0] = false
+    if (limit >= 1) { isPrime[1] = false }
+    mut i: I64 = 2
+    while (i * i <= limit) {
+        if (isPrime[i]) {
+            mut j: I64 = i * i
+            while (j <= limit) {
+                isPrime[j] = false
+                j += i
+            }
+        }
+        i += 1
+    }
+    isPrime
+}
+
+fn IsPrimeSlow(n: I64) -> Bool {
+    if (n < 2) { return false }
+    mut d: I64 = 2
+    while (d * d <= n) {
+        if (n % d == 0) { return false }
+        d += 1
+    }
+    true
+}
+
+fn Factorize(n: I64) -> Array<I64> {
+    mut rest: I64 = n
+    mut out: Array<I64> = []
+    mut d: I64 = 2
+    while (d * d <= rest) {
+        while (rest % d == 0) {
+            out.Push(d)
+            rest = rest / d
+        }
+        d += 1
+    }
+    if (rest > 1) { out.Push(rest) }
+    out
+}
+
+fn Text(a: Array<I64>, sep: String) -> String {
+    a.Map((x: I64) => "${x}").Join(sep)
+}
+
+fn Main() {
+    let limit: I64 = 100
+    let sieve: Array<Bool> = Sieve(limit)
+    mut primes: Array<I64> = []
+    for (i in 0..=limit) {
+        if (sieve[i]) { primes.Push(i) }
+    }
+    Console.Println("primes up to ${limit} (${primes.Len()}): ${Text(primes, " ")}")
+
+    // The two methods agree.
+    mut agree: Bool = true
+    for (i in 0..=limit) {
+        if (sieve[i] != IsPrimeSlow(i)) { agree = false }
+    }
+    Console.Println("sieve matches trial division: ${agree}")
+
+    // Counting is cheap even for bigger limits.
+    let big: Array<Bool> = Sieve(100000)
+    let count: I64 = big.Count((b: Bool) => b)
+    Console.Println("primes below 100000: ${count}")
+    mut last: I64 = 100000
+    while (!big[last]) { last -= 1 }
+    Console.Println("largest prime below 100000: ${last}")
+
+    // Twin primes: p and p + 2 are both prime.
+    mut twins: Array<String> = []
+    for (p in primes) {
+        if (p + 2 <= limit && sieve[p + 2]) { twins.Push("(${p},${p + 2})") }
+    }
+    Console.Println("twin primes: ${twins.Join(" ")}")
+
+    for (n in [360, 97, 1001, 600851475143]) {
+        Console.Println("${n} = ${Text(Factorize(n), " x ")}")
+    }
+}

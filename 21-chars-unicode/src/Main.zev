@@ -1,0 +1,44 @@
+// Strings are UTF-8. Len() counts bytes, CharCount() counts characters (code points).
+// Text.ToChars, CharAt and SliceChars work on characters; the Chars module classifies one Char.
+// Modules: Zevic.Text, Zevic.Chars.
+
+module Main
+
+import Zevic.Chars
+import Zevic.Console
+import Zevic.Text
+
+fn Main() {
+    let s: String = "héllo, 世界!"
+    let cs: Array<Char> = Text.ToChars(s)
+    Console.Println("bytes ${s.Len()}, chars ${s.CharCount()}, array ${cs.Len()}")
+    Console.Println("round trip: ${Text.FromChars(cs)}")
+
+    // Character-based access (an index is a character index, not a byte offset).
+    Console.Println("char 1: ${Text.CharAt(s, 1).Unwrap()}, char 8: ${Text.CharAt(s, 8).Unwrap()}")
+    Console.Println("char 99 missing: ${Text.CharAt(s, 99).IsNone()}")
+    Console.Println("slice 7..9: [${Text.SliceChars(s, 7, 9)}], slice 0..2: [${Text.SliceChars(s, 0, 2)}]")
+    Console.Println("reversed: ${Text.Reverse(s)}")
+
+    // Classifying and converting characters.
+    Console.Println("${Chars.IsDigit('7')} ${Chars.IsAlpha('x')} ${Chars.IsUpper('x')} ${Chars.IsSpace('\t')}")
+    Console.Println("${Chars.IsPunct('!')} ${Chars.IsPunct('a')} ascii of 世: ${Chars.IsAscii('世')}")
+    Console.Println("${Chars.ToUpper('q')} ${Chars.ToLower('Q')}")
+    Console.Println("digit value of f in base 16: ${Chars.DigitValue('f', 16).Unwrap()}")
+    Console.Println("g in base 16 is a digit: ${!Chars.DigitValue('g', 16).IsNone()}")
+
+    // Code points and how many UTF-8 bytes each one needs.
+    let wave: Char = Chars.FromU32(0x4E16_U32).Unwrap()
+    Console.Println("U+4E16 is ${wave}")
+    Console.Println("surrogate is invalid: ${Chars.FromU32(0xD800_U32).IsNone()}")
+    let smile: Char = Chars.FromU32(0x1F600_U32).Unwrap()
+    Console.Println("utf8 length: a=${Chars.Utf8Len('a')} é=${Chars.Utf8Len('é')} 世=${Chars.Utf8Len('世')} U+1F600=${Chars.Utf8Len(smile)}")
+
+    // Count the letters of each kind in a text.
+    mut ascii: I32 = 0
+    mut other: I32 = 0
+    for (c in Text.ToChars("naïve café 日本")) {
+        if (Chars.IsAscii(c)) { ascii += 1 } else { other += 1 }
+    }
+    Console.Println("ascii ${ascii}, other ${other}")
+}

@@ -1,0 +1,30 @@
+Demo
+localhost:8080
+ratio 0.75 debug true
+max_conn 1000
+plugins: 2
+  alpha
+  beta
+wrong type: true
+missing: true
+server keys: debug, host, limits, port, ratio
+title = "Demo"
+
+[server]
+host = "localhost"
+port = 8080
+ratio = 0.75
+debug = true
+
+[server.limits]
+max_conn = 1000
+
+[[plugin]]
+name = "alpha"
+
+[[plugin]]
+name = "beta"
+round trip: true
+error: TOML line 1: a value was expected
+error: TOML line 2: the key "a" is defined twice
+error: TOML line 2: the table [t] is defined twice

@@ -1,0 +1,11 @@
+search 2: found at 0 | rec: found at 0 | builtin: found at 0
+search 13: found at 5 | rec: found at 5 | builtin: found at 5
+search 29: found at 9 | rec: found at 9 | builtin: found at 9
+search 4: not found | rec: not found | builtin: not found
+search 30: not found | rec: not found | builtin: not found
+search 1: not found | rec: not found | builtin: not found
+insertion point of 12 = 5
+insertion point of 1 = 0
+insertion point of 100 = 10
+kept sorted: 1 3 6 8 10
+isqrt(1000) = 31

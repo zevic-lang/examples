@@ -1,0 +1,76 @@
+// Interfaces: a promise about methods, with optional default implementations.
+// Structs, classes and enums can implement them; a value can be used through its interface.
+
+module Main
+
+import Zevic.Console
+
+interface Shape {
+    fn Area() -> F64
+    fn Name() -> String
+
+    // A default implementation, used unless the type defines its own.
+    fn Describe() -> String {
+        "${this.Name()} with area ${this.Area()}"
+    }
+}
+
+class Rect : Shape {
+    w: F64
+    h: F64
+    fn Init(w: F64, h: F64) {
+        this.w = w
+        this.h = h
+    }
+
+    fn Area() -> F64 { this.w * this.h }
+    fn Name() -> String { "rect" }
+}
+
+struct Square : Shape {
+    side: F64
+    fn Init(side: F64) { this.side = side }
+    fn Area() -> F64 { this.side * this.side }
+    fn Name() -> String { "square" }
+    // Overrides the default.
+    fn Describe() -> String { "a square of side ${this.side}" }
+}
+
+enum Tri : Shape {
+    Right(F64, F64),
+    Flat,
+
+    fn Area() -> F64 {
+        match (this) {
+            Tri.Right(a, b) => a * b / 2.0,
+            Tri.Flat => 0.0,
+        }
+    }
+
+    fn Name() -> String { "triangle" }
+}
+
+// Works with any implementation.
+fn Total(shapes: Array<Shape>) -> F64 {
+    mut sum: F64 = 0.0
+    for (s in shapes) {
+        sum += s.Area()
+    }
+    sum
+}
+
+// An interface can also be a constraint on a generic parameter.
+fn Biggest<T: Shape>(a: T, b: T) -> T {
+    if (a.Area() >= b.Area()) { a } else { b }
+}
+
+fn Main() {
+    let shapes: Array<Shape> = [Rect.New(2.0, 3.0), Square.New(3.0), Tri.Right(3.0, 4.0), Tri.Flat]
+    for (s in shapes) {
+        Console.Println(s.Describe())
+    }
+    Console.Println("total area = ${Total(shapes)}")
+
+    let big: Rect = Biggest(Rect.New(1.0, 2.0), Rect.New(4.0, 1.0))
+    Console.Println("biggest: ${big.Describe()}")
+}

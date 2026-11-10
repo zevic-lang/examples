@@ -1,0 +1,40 @@
+// Path manipulation without touching the disk: join, clean, split names, extensions, relative paths.
+// Results are shown with "/" so the output is the same on every system.
+// Modules: Zevic.Path, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Path
+import Zevic.Text
+
+// Show a path with "/" whatever the system uses.
+fn N(s: String) -> String {
+    Text.Replace(s, Path.Separator(), "/")
+}
+
+fn Main() {
+    // Joining and cleaning.
+    Console.Println("join: ${N(Path.Join("a", "b"))} ${N(Path.Join("a/", "b"))} ${N(Path.JoinAll(["x", "y", "z.txt"]))}")
+    Console.Println("clean: ${N(Path.Clean("a//b/./c/../d/"))} ${N(Path.Clean("/../a"))} ${N(Path.Clean("../../a/.."))}")
+
+    // Pieces of a path.
+    let p: String = "/home/ann/report.tar.gz"
+    Console.Println("file name: ${Path.FileName(p)}")
+    Console.Println("parent: ${N(Path.Parent(p))}")
+    Console.Println("extension: ${Path.Extension(p).Unwrap()}, stem: ${Path.Stem(p)}")
+    Console.Println("no extension: ${Path.Extension("Makefile").IsNone()}, hidden file: ${Path.Extension(".bashrc").IsNone()}")
+    Console.Println("split: ${Path.Split("/a//b/").Join("|")}")
+    Console.Println("with extension: ${N(Path.WithExtension("d/a.txt", "md"))} ${N(Path.WithExtension("d/a.txt", ""))}")
+
+    // Absolute or relative.
+    Console.Println("absolute: ${Path.IsAbsolute("/a")} ${Path.IsAbsolute("a")}")
+
+    // Relative paths between two locations (None when they cannot be related).
+    Console.Println("relative: ${N(Path.Relative("/a/b", "/a/c/d").Unwrap())}")
+    Console.Println("relative inside: ${N(Path.Relative("a", "a/b/c").Unwrap())}")
+    Console.Println("unrelated: ${Path.Relative("/a", "b").IsNone()}")
+
+    // Containment test, useful to reject "../" tricks.
+    Console.Println("inside: ${Path.IsInside("/a", "/a/b")} ${Path.IsInside("/a", "/ab")} ${Path.IsInside("/a/b", "/a")}")
+}

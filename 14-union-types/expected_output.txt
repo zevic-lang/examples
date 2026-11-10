@@ -1,0 +1,8 @@
+21: number 21
+  doubled 42
+x1: not a number: x1
+int 7
+text 'seven'
+error (seven?)
+int 5
+sum of ints 4, strings 1

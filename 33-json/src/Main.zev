@@ -1,0 +1,42 @@
+// JSON: parse text, read values with typed accessors, build a document from
+// Json.Value cases and print it compact and pretty.
+// Modules: Zevic.Json.
+
+module Main
+
+import Zevic.Console
+import Zevic.Json
+
+fn Main() {
+    let text: String = "{\"name\": \"zevic\", \"version\": 4, \"pi\": 3.25, \"tags\": [\"fast\", \"native\"], \"stable\": false, \"parent\": null}"
+    let v: Json.Value = Json.Parse(text).Unwrap()
+
+    Console.Println(v.Get("name").Unwrap().AsString().Unwrap())
+    Console.Println("${v.Get("version").Unwrap().AsI64().Unwrap()} ${v.Get("pi").Unwrap().AsF64().Unwrap()}")
+    Console.Println("stable ${v.Get("stable").Unwrap().AsBool().Unwrap()} parent null ${v.Get("parent").Unwrap().IsNull()}")
+    Console.Println("second tag ${v.Get("tags").Unwrap().At(1).Unwrap().AsString().Unwrap()}")
+    // Option results instead of crashes.
+    Console.Println("missing key ${v.Get("nope").IsNone()}, past the end ${v.Get("tags").Unwrap().At(5).IsNone()}")
+    Console.Println("3.25 as integer ${v.Get("pi").Unwrap().AsI64().IsNone()}")
+
+    // Compact output keeps the key order of the input.
+    Console.Println(Json.Stringify(v))
+    Console.Println(Json.Pretty(v))
+
+    // Build a value by hand.
+    mut obj: Map<String, Json.Value> = Map.New()
+    obj.Set("id", Json.Value.Number(7.0))
+    obj.Set("label", Json.Value.Str("tab\tand \"quote\""))
+    obj.Set("items", Json.Value.List([Json.Value.Number(1.5), Json.Value.Bool(true), Json.Value.Null]))
+    let built: String = Json.Stringify(Json.Value.Object(obj))
+    Console.Println(built)
+    Console.Println("round trip: ${Json.Stringify(Json.Parse(built).Unwrap()) == built}")
+
+    // Errors report the place.
+    for (bad in ["[1, 2", "{\"a\" 1}", "[1,]", "01"]) {
+        match (Json.Parse(bad)) {
+            Ok(_) => Console.Println("accepted: ${bad}"),
+            Err(e) => Console.Println("error: ${e.Message()}"),
+        }
+    }
+}

@@ -1,0 +1,69 @@
+// Running another program. To stay portable (no `sh`, no `echo`), this example
+// starts itself: the same executable runs as a child when its first argument is
+// `--child`. Process.Run waits and collects the exit code, stdout and stderr;
+// Process.Inherit lets the child write straight to our output.
+// Modules: Zevic.Process, Zevic.Env.
+
+module Main
+
+import Zevic.Console
+import Zevic.Env
+import Zevic.Process
+import Zevic.Text
+
+// What the program does when it is started as the child.
+fn RunChild(args: Array<String>) {
+    let mode: String = args[1]
+    if (mode == "echo") {
+        // Print every argument in brackets, one per line.
+        for (a in args.Slice(2, args.Len())) {
+            Console.Println("[${a}]")
+        }
+    } else if (mode == "fail") {
+        Console.Println("child output")
+        Console.Eprintln("child complaint")
+        Env.Exit(7)
+    } else if (mode == "stdout") {
+        Console.Println("written by the child")
+    }
+}
+
+// Run this program as a child with the given arguments.
+fn Child(args: Array<String>) -> Process.Output {
+    mut all: Array<String> = ["--child"]
+    all.Extend(args)
+    Process.Run(Env.ExePath(), all).Unwrap()
+}
+
+fn Main() {
+    let args: Array<String> = Env.RawArgs()
+    if (args.Len() > 0 && args[0] == "--child") {
+        RunChild(args)
+        return
+    }
+
+    // Arguments reach the child unchanged, even spaces and shell characters.
+    let echoed: Process.Output = Child(["echo", "hello", "two words", "it's", "$HOME", "a;b"])
+    Console.Println("exit code ${echoed.Code}, success ${echoed.Success()}")
+    for (line in Text.Lines(echoed.Stdout)) {
+        Console.Println("  ${line}")
+    }
+
+    // A failing child is not an error for Run: look at Code, Stdout and Stderr.
+    let failed: Process.Output = Child(["fail"])
+    Console.Println("exit code ${failed.Code}, success ${failed.Success()}")
+    Console.Println("stdout: ${Text.Trim(failed.Stdout)}")
+    Console.Println("stderr: ${Text.Trim(failed.Stderr)}")
+
+    // A program that does not exist: the shell reports a failure (its exact
+    // exit code differs between systems), so only "did not succeed" is shown.
+    match (Process.Run("zevic-no-such-program", [])) {
+        Ok(o) => Console.Println("missing program succeeded: ${o.Success()}"),
+        Err(e) => Console.Println("could not start: ${e.Kind().ToString()}"),
+    }
+
+    // Inherit: the child's output goes to our output; only the code comes back.
+    Console.Println("before inherit")
+    let code: I32 = Process.Inherit(Env.ExePath(), ["--child", "stdout"]).Unwrap()
+    Console.Println("inherit exit code ${code}")
+}

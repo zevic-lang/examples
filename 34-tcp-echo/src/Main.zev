@@ -1,0 +1,46 @@
+// A TCP echo server and a client in one program, talking over the loopback
+// interface. The server listens on port 0 (the system picks a free port) and
+// runs in an async task; the client connects to whatever port was chosen.
+// Modules: Zevic.Net, Zevic.Async.
+
+module Main
+
+import Zevic.Async
+import Zevic.Console
+import Zevic.Net
+
+fn Main() {
+    mut listener: Net.TcpListener = Net.Listen("127.0.0.1", 0).Unwrap()
+    let port: I64 = listener.Port()
+
+    // The server answers each line with "echo:" + the line until it sees "quit".
+    let server: Async.Task<I64> = async {
+        mut peer: Net.TcpStream = listener.Accept().Unwrap()
+        mut lines: I64 = 0
+        loop {
+            match (peer.ReadLine().Unwrap()) {
+                Some(line) => {
+                    lines += 1
+                    let sent: Result<Unit, Error> = peer.WriteString("echo:${line}\n")
+                    if (line == "quit") { break }
+                },
+                None => { break },
+            }
+        }
+        peer.Close()
+        lines
+    }
+
+    mut client: Net.TcpStream = Net.Connect("127.0.0.1", port).Unwrap()
+    client.SetTimeout(5000)
+    for (msg in ["hello", "zevic", "quit"]) {
+        client.WriteString("${msg}\n").Unwrap()
+        Console.Println(client.ReadLine().Unwrap().Unwrap())
+    }
+    // After "quit" the server closes the connection: reading gives None.
+    Console.Println("closed by server: ${client.ReadLine().Unwrap().IsNone()}")
+    client.Close()
+
+    Console.Println("server handled ${await server} lines")
+    listener.Close()
+}

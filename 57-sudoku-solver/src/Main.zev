@@ -1,0 +1,87 @@
+// A sudoku solver using backtracking over a flat Array<I32> of 81 cells (0 = empty).
+// The puzzle is fixed, so the output is always the same.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+let Puzzle: String = "" "
+    530070000
+    600195000
+    098000060
+    800060003
+    400803001
+    700020006
+    060000280
+    000419005
+    000080079
+    " ""
+
+fn Parse(text: String) -> Array<I32> {
+    mut cells: Array<I32> = []
+    for (c in Text.ToChars(Text.Replace(text, "\n", ""))) {
+        cells.Push(c.ToU32().ToI32Wrap() - 48)
+    }
+    cells
+}
+
+// Can digit d go at (row, col)?
+fn Fits(cells: Array<I32>, row: I64, col: I64, d: I32) -> Bool {
+    for (i in 0..9) {
+        if (cells[row * 9 + i] == d || cells[i * 9 + col] == d) { return false }
+    }
+    let r0: I64 = row / 3 * 3
+    let c0: I64 = col / 3 * 3
+    for (r in r0.. (r0 + 3)) {
+        for (c in c0.. (c0 + 3)) {
+            if (cells[r * 9 + c] == d) { return false }
+        }
+    }
+    true
+}
+
+// Fill cells from `pos` on. Returns true when a full solution is in `cells`.
+fn Solve(mut cells: Array<I32>, pos: I64, mut steps: Array<I64>) -> Bool {
+    mut p: I64 = pos
+    while (p < 81 && cells[p] != 0) { p += 1 }
+    if (p == 81) { return true }
+    for (d in 1..=9) {
+        let digit: I32 = d.ToI32Wrap()
+        if (Fits(cells, p / 9, p % 9, digit)) {
+            cells[p] = digit
+            steps[0] += 1
+            if (Solve(cells, p + 1, steps)) { return true }
+            cells[p] = 0 // undo and try the next digit
+        }
+    }
+    false
+}
+
+fn Show(cells: Array<I32>) {
+    for (row in 0..9) {
+        if (row % 3 == 0 && row > 0) { Console.Println("------+-------+------") }
+        mut parts: Array<String> = []
+        for (col in 0..9) {
+            if (col % 3 == 0 && col > 0) { parts.Push("|") }
+            let v: I32 = cells[row * 9 + col]
+            parts.Push(if (v == 0) { "." } else { "${v}" })
+        }
+        Console.Println(parts.Join(" "))
+    }
+}
+
+fn Main() {
+    mut cells: Array<I32> = Parse(Puzzle)
+    Console.Println("puzzle (${cells.Count((v: I32) => v != 0)} givens):")
+    Show(cells)
+    mut steps: Array<I64> = [0]
+    if (Solve(cells, 0, steps)) {
+        Console.Println("")
+        Console.Println("solved after ${steps[0]} placements:")
+        Show(cells)
+    } else {
+        Console.Println("no solution")
+    }
+}

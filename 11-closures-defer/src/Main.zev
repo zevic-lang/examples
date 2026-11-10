@@ -1,0 +1,86 @@
+// Closures and defer.
+// A closure captures variables from the scope around it (even ones that change),
+// and `defer` runs code when the enclosing block is left, in reverse order.
+
+module Main
+
+import Zevic.Console
+
+// Returns a function that remembers `n`.
+fn MakeAdder(n: I32) -> fn(I32) -> I32 {
+    (x: I32) => x + n
+}
+
+// Each call creates a fresh counter with its own private state.
+fn MakeCounter() -> fn() -> I32 {
+    mut count: I32 = 0
+    () => {
+        count += 1
+        count
+    }
+}
+
+// Functions are values: pass them as arguments.
+fn Apply(f: fn(I32) -> I32, times: I32, start: I32) -> I32 {
+    mut v: I32 = start
+    for (_i in 0..times.ToI64()) {
+        v = f(v)
+    }
+    v
+}
+
+// defer runs when the function returns, last deferred first.
+fn Work(fail: Bool) -> Result<I32, Error> {
+    Console.Println("  open")
+    defer Console.Println("  close")
+    defer { Console.Println("  flush") }
+    if (fail) {
+        return Err(Error.New(ErrorKind.Other, "work failed"))
+    }
+    Ok(42)
+}
+
+fn Main() {
+    let add10: fn(I32) -> I32 = MakeAdder(10)
+    Console.Println("add10(5) = ${add10(5)}")
+    Console.Println("apply three times: ${Apply(add10, 3, 0)}")
+    Console.Println("apply a lambda: ${Apply((x: I32) => x * 2, 5, 1)}")
+
+    let a: fn() -> I32 = MakeCounter()
+    let b: fn() -> I32 = MakeCounter()
+    Console.Println("counters: ${a()} ${a()} ${b()} ${a()}")
+
+    // A closure sees later changes of the variable it captured.
+    mut total: I32 = 0
+    let add: fn(I32) -> Unit = (d: I32) => { total += d }
+    add(3)
+    add(4)
+    Console.Println("total = ${total}")
+
+    // One closure per loop iteration.
+    mut fs: Array<fn() -> I32> = []
+    for (i in 0..3) {
+        fs.Push(() => i.ToI32Wrap() * 10)
+    }
+    for (f in fs) {
+        Console.Println("closure gives ${f()}")
+    }
+
+    Console.Println("work(false):")
+    match (Work(false)) {
+        Ok(v) => Console.Println("  ok ${v}"),
+        Err(e) => Console.Println("  error ${e.Message()}"),
+    }
+    Console.Println("work(true):")
+    match (Work(true)) {
+        Ok(v) => Console.Println("  ok ${v}"),
+        Err(e) => Console.Println("  error ${e.Message()}"),
+    }
+
+    // defer inside a loop runs at the end of every iteration.
+    for (i in 0..3) {
+        defer Console.Println("end of iteration ${i}")
+        if (i == 1) { continue }
+        Console.Println("body ${i}")
+    }
+}

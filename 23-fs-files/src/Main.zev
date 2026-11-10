@@ -1,0 +1,58 @@
+// Files and directories: write, read, append, lines, copy, list and walk a directory tree.
+// Everything happens in a temporary directory that is removed at the end.
+// Modules: Zevic.Fs, Zevic.Path, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Fs
+import Zevic.Path
+import Zevic.Text
+
+// Paths of a directory tree, relative to its root, sorted, shown with "/".
+fn Tree(root: String) -> String {
+    let all: Array<String> = Fs.Walk(root).Unwrap()
+    mut names: Array<String> = all.Map((p: String) => Text.Replace(Path.Relative(root, p).Unwrap(), Path.Separator(), "/"))
+    names.Sort()
+    names.Join(" ")
+}
+
+fn Main() {
+    let root: String = Fs.MakeTempDir("zevex-").Unwrap()
+    Console.Println("temp dir exists: ${Fs.IsDir(root)}")
+
+    // Write, append, read.
+    let notes: String = Path.Join(root, "notes.txt")
+    Fs.WriteAll(notes, "first\n").Unwrap()
+    Fs.Append(notes, "second\n").Unwrap()
+    Console.Println("size: ${Fs.Size(notes).Unwrap()}")
+    Console.Print(Fs.ReadAll(notes).Unwrap())
+
+    // Lines.
+    let list: String = Path.Join(root, "list.txt")
+    Fs.WriteLines(list, ["alpha", "beta", "gamma"]).Unwrap()
+    Console.Println(Fs.ReadLines(list).Unwrap().Join(","))
+
+    // Directories, copy and rename.
+    Fs.CreateDirAll(Path.Join(root, "sub/deep")).Unwrap()
+    Fs.Copy(list, Path.Join(root, "sub/copy.txt")).Unwrap()
+    Fs.Rename(notes, Path.Join(root, "sub/deep/moved.txt")).Unwrap()
+    Console.Println("notes still there: ${Fs.Exists(notes)}")
+    Console.Println("tree: ${Tree(root)}")
+
+    // Copy a whole directory, then list one level of it.
+    Fs.CopyDir(Path.Join(root, "sub"), Path.Join(root, "dup")).Unwrap()
+    mut level: Array<String> = Fs.List(Path.Join(root, "dup")).Unwrap()
+    level.Sort()
+    Console.Println("dup has: ${level.Join(" ")}")
+
+    // Errors are values.
+    match (Fs.ReadAll(Path.Join(root, "missing.txt"))) {
+        Ok(_) => Console.Println("unexpected"),
+        Err(_) => Console.Println("reading a missing file fails"),
+    }
+
+    // Clean up.
+    Fs.RemoveAll(root).Unwrap()
+    Console.Println("removed: ${!Fs.Exists(root)}")
+}

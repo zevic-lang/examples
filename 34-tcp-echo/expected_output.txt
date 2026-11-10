@@ -1,0 +1,5 @@
+echo:hello
+echo:zevic
+echo:quit
+closed by server: true
+server handled 3 lines

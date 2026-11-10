@@ -1,0 +1,45 @@
+// UDP: two sockets on the loopback interface exchange datagrams. Each socket is
+// bound to port 0, so the system picks the port; a packet tells who sent it.
+// Modules: Zevic.Net.
+
+module Main
+
+import Zevic.Console
+import Zevic.Encoding
+import Zevic.Net
+
+fn Main() {
+    mut a: Net.UdpSocket = Net.BindUdp("127.0.0.1", 0).Unwrap()
+    mut b: Net.UdpSocket = Net.BindUdp("127.0.0.1", 0).Unwrap()
+    a.SetTimeout(3000)
+    b.SetTimeout(3000)
+
+    // a -> b: text
+    a.SendString("127.0.0.1", b.Port(), "ping").Unwrap()
+    let p: Net.Packet = b.Receive(100).Unwrap()
+    Console.Println("b got \"${p.Text()}\" from ${p.FromHost()}, sender is a: ${p.FromPort() == a.Port()}")
+
+    // b -> a: bytes, answered to the address the packet came from
+    b.SendBytes(p.FromHost(), p.FromPort(), [1, 0, 2, 255]).Unwrap()
+    let q: Net.Packet = a.Receive(100).Unwrap()
+    Console.Println("a got ${q.Bytes().Len()} bytes: ${Encoding.HexEncode(q.Bytes())}")
+
+    // Datagrams keep their boundaries: three sends are three receives.
+    for (word in ["one", "two", "three"]) {
+        a.SendString("127.0.0.1", b.Port(), word).Unwrap()
+    }
+    mut words: Array<String> = []
+    for (i in 0..3) {
+        words.Push(b.Receive(100).Unwrap().Text())
+    }
+    Console.Println("three datagrams: ${words.Sorted().Join(",")}")
+
+    // Nothing is waiting any more: the receive times out.
+    a.SetTimeout(50)
+    match (a.Receive(10)) {
+        Ok(_) => Console.Println("unexpected packet"),
+        Err(e) => Console.Println("nothing to read: ${e.Kind().ToString()}"),
+    }
+    a.Close()
+    b.Close()
+}

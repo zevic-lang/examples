@@ -1,0 +1,165 @@
+// A recursive descent parser for arithmetic: + - * / parentheses and unary minus.
+//
+// Each grammar rule is one method. The parser builds a tree (an enum), prints it fully
+// parenthesized, and evaluates it. An enum may not contain itself directly, so the children are
+// wrapped in a small class (Node): a class is a reference, which breaks the cycle. Errors are Results that carry the position.
+//
+//   expr    = term (("+" | "-") term)*
+//   term    = unary (("*" | "/") unary)*
+//   unary   = "-" unary | primary
+//   primary = number | "(" expr ")"
+//
+// Library modules: Zevic.Console, Zevic.Chars.
+
+module Main
+
+import Zevic.Chars
+import Zevic.Console
+
+enum Expr {
+    Num(F64),
+    Neg(Node),
+    Bin(U8, Node, Node),
+
+    // The tree as text, with every operation in parentheses.
+    fn Show() -> String {
+        match (this) {
+            Expr.Num(n) => "${n}",
+            Expr.Neg(e) => "(-${e.e.Show()})",
+            Expr.Bin(op, a, b) => "(${a.e.Show()} ${String.FromByte(op)} ${b.e.Show()})",
+        }
+    }
+
+    fn Eval() -> Result<F64, Error> {
+        match (this) {
+            Expr.Num(n) => Ok(n),
+            Expr.Neg(e) => Ok(-e.e.Eval()?),
+            Expr.Bin(op, a, b) => {
+                let x: F64 = a.e.Eval()?
+                let y: F64 = b.e.Eval()?
+                if (op == b'+') { return Ok(x + y) }
+                if (op == b'-') { return Ok(x - y) }
+                if (op == b'*') { return Ok(x * y) }
+                if (y == 0.0) { return Err(Error.New(ErrorKind.Invalid, "division by zero")) }
+                Ok(x / y)
+            },
+        }
+    }
+}
+
+// A tree node: a reference to an Expr.
+class Node {
+    e: Expr
+
+    fn Init(e: Expr) { this.e = e }
+}
+
+class Parser {
+    src: String
+    pos: I64 = 0
+
+    fn Init(src: String) { this.src = src }
+
+    fn fail(msg: String) -> Error {
+        Error.New(ErrorKind.Invalid, "${msg} at position ${this.pos}")
+    }
+
+    // The byte at the cursor after skipping spaces; 0 at the end.
+    mut fn peek() -> U8 {
+        while (this.pos < this.src.Len() && this.src.ByteAt(this.pos) == b' ') {
+            this.pos += 1
+        }
+        if (this.pos < this.src.Len()) { this.src.ByteAt(this.pos) } else { 0_U8 }
+    }
+
+    mut fn expr() -> Result<Expr, Error> {
+        mut left: Expr = this.term()?
+        loop {
+            let c: U8 = this.peek()
+            if (c != b'+' && c != b'-') { break }
+            this.pos += 1
+            let right: Expr = this.term()?
+            left = Expr.Bin(c, Node.New(left), Node.New(right))
+        }
+        Ok(left)
+    }
+
+    mut fn term() -> Result<Expr, Error> {
+        mut left: Expr = this.unary()?
+        loop {
+            let c: U8 = this.peek()
+            if (c != b'*' && c != b'/') { break }
+            this.pos += 1
+            let right: Expr = this.unary()?
+            left = Expr.Bin(c, Node.New(left), Node.New(right))
+        }
+        Ok(left)
+    }
+
+    mut fn unary() -> Result<Expr, Error> {
+        if (this.peek() == b'-') {
+            this.pos += 1
+            return Ok(Expr.Neg(Node.New(this.unary()?)))
+        }
+        this.primary()
+    }
+
+    mut fn primary() -> Result<Expr, Error> {
+        let c: U8 = this.peek()
+        if (c == b'(') {
+            this.pos += 1
+            let inner: Expr = this.expr()?
+            if (this.peek() != b')') { return Err(this.fail("expected ')'")) }
+            this.pos += 1
+            return Ok(inner)
+        }
+        let start: I64 = this.pos
+        while (this.pos < this.src.Len()) {
+            let d: U8 = this.src.ByteAt(this.pos)
+            if (!Chars.IsDigit(Char.FromByte(d)) && d != b'.') { break }
+            this.pos += 1
+        }
+        if (this.pos == start) {
+            if (c == 0_U8) { return Err(this.fail("unexpected end")) }
+            return Err(this.fail("unexpected '${String.FromByte(c)}'"))
+        }
+        let n: F64 = this.src.Slice(start, this.pos).ToF64().MapErr((e: Error) => this.fail("bad number"))?
+        Ok(Expr.Num(n))
+    }
+}
+
+fn Calc(text: String) -> Result<Expr, Error> {
+    mut p: Parser = Parser.New(text)
+    let e: Expr = p.expr()?
+    if (p.peek() != 0_U8) { return Err(p.fail("unexpected '${String.FromByte(p.peek())}'")) }
+    Ok(e)
+}
+
+fn Main() {
+    let inputs: Array<String> = [
+        "1 + 2 * 3",
+        "(1 + 2) * 3",
+        "-4 + 10",
+        "2 * -(3 - 5)",
+        "100 / 8 / 5",
+        "1 - 2 - 3",
+        "--3",
+        "1.5 * 4",
+        "1 / 0",
+        "2 +",
+        "(1 + 2",
+        "3 $ 4",
+        "1 2",
+    ]
+    for (text in inputs) {
+        match (Calc(text)) {
+            Ok(tree) => {
+                match (tree.Eval()) {
+                    Ok(v) => Console.Println("${text} => ${tree.Show()} = ${v}"),
+                    Err(e) => Console.Println("${text} => ${tree.Show()} fails: ${e.Message()}"),
+                }
+            },
+            Err(e) => Console.Println("${text} => error: ${e.Message()}"),
+        }
+    }
+}

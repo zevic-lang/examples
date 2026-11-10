@@ -1,0 +1,9 @@
+hello world
+ababab
+length: 18
+truncated: hello
+empty after Clear: true
+item1, item2, item3, item4, item5
+1 x 1 = 1
+2 x 2 = 4
+3 x 3 = 9

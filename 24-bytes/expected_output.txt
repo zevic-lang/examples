@@ -1,0 +1,9 @@
+length 6, second and third byte 195 169
+valid UTF-8: true, text: héllo
+false true h�i
+record has 10 bytes: 202 254 | 0 0 3 232 | 239 190 173 222
+tag 51966, length 1000, checksum 3735928559
+the same bytes read the other way round: 65226
+first 1, last 8, back 72623859790382856
+zeros: 4 bytes
+file size 11, bytes read 11, byte 3 = 255

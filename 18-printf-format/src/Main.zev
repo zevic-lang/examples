@@ -1,0 +1,43 @@
+// C-style formatting with Console.Printf (prints) and Text.Format (returns a String).
+// The format must be a string literal; the compiler checks the count and types of the values.
+// Modules: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+fn Main() {
+    // Integers: %d, width, left-align (-), sign (+), zero padding (0).
+    Console.Printf("[%d] [%5d] [%-5d] [%+d] [%05d]\n", 42, 42, 42, 42, 42)
+
+    // Hex and octal: %x %X %o, and %#x adds the 0x prefix.
+    Console.Printf("%x %X %o %#x\n", 255, 255, 8, 255)
+
+    // Floats: %f with width and precision, %e scientific, %g shortest.
+    Console.Printf("[%f] [%.2f] [%5.2f] [%8.3f]\n", 3.14159, 3.14159, 2.5, 2.5)
+    Console.Printf("%e %g %g\n", 12345.678, 0.0001, 1234567.0)
+
+    // Strings and chars: %s, width, left-align, precision cuts the text, %c.
+    Console.Printf("[%s] [%8s] [%-8s] [%.3s] [%c]\n", "zevic", "right", "left", "truncate", 'Z')
+
+    // A literal percent sign.
+    Console.Printf("100%% sure\n")
+
+    // Text.Format returns the string instead of printing it.
+    let line: String = Text.Format("%-8s|%6.2f|%4d", "apple", 1.5, 12)
+    Console.Println(line)
+    Console.Println("length of the line: ${line.Len()}")
+
+    // A small table built with Format.
+    let names: Array<String> = ["tea", "coffee", "milk"]
+    let prices: Array<F64> = [1.5, 2.25, 0.8]
+    for (i in 0..names.Len()) {
+        Console.Println(Text.Format("%-8s %6.2f", names[i], prices[i]))
+    }
+
+    // Different integer types work with %d, %u needs no sign.
+    let small: I8 = -5
+    let big: U64 = 18446744073709551615
+    Console.Printf("%d %u\n", small, big)
+}

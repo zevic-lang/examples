@@ -1,0 +1,2 @@
+8 tasks x 5000 increments = 40000
+sum of 1000 x (1..=10) = 55000

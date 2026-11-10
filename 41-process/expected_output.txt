@@ -1,0 +1,13 @@
+exit code 0, success true
+  [hello]
+  [two words]
+  [it's]
+  [$HOME]
+  [a;b]
+exit code 7, success false
+stdout: child output
+stderr: child complaint
+missing program succeeded: false
+before inherit
+written by the child
+inherit exit code 0

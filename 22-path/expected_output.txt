@@ -1,0 +1,13 @@
+join: a/b a/b x/y/z.txt
+clean: a/b/d /a ../..
+file name: report.tar.gz
+parent: /home/ann
+extension: gz, stem: report.tar
+no extension: true, hidden file: true
+split: a|b
+with extension: d/a.md d/a
+absolute: true false
+relative: ../c/d
+relative inside: b/c
+unrelated: true
+inside: true false false
