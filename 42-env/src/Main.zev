@@ -1,0 +1,38 @@
+// The environment of a program: command-line arguments, environment variables, the working directory and
+// the operating system. Only facts that are the same on every system are printed.
+// Modules: Zevic.Env.
+
+module Main
+
+import Zevic.Console
+import Zevic.Env
+import Zevic.Path
+
+// Main may take the arguments (the program name is not included).
+fn Main(args: Array<String>) {
+    Console.Println("arguments: ${args.Len()}")
+    for (a in args) {
+        Console.Println("  [${a}]")
+    }
+    Console.Println("same as Env.RawArgs: ${args == Env.RawArgs()}")
+
+    // Environment variables: Get gives None when a variable is not set.
+    Console.Println("unset: ${Env.Get("ZEVIC_EXAMPLE_NOT_SET").IsNone()}")
+    Env.Set("ZEVIC_EXAMPLE", "hello").Unwrap()
+    Console.Println("set: ${Env.Get("ZEVIC_EXAMPLE").Unwrap()}")
+    Env.Set("ZEVIC_EXAMPLE", "").Unwrap()
+    Console.Println("empty but set: ${Env.Get("ZEVIC_EXAMPLE").IsSome()}")
+
+    // Where the program runs.
+    Console.Println("absolute working directory: ${Path.IsAbsolute(Env.CurrentDir())}")
+    Console.Println("absolute program path: ${Path.IsAbsolute(Env.ExePath())}")
+    let os: String = Env.OS()
+    Console.Println("known system: ${os == "linux" || os == "macos" || os == "windows"}")
+    Console.Println("IsWindows agrees: ${Env.IsWindows() == (os == "windows")}")
+
+    // Env.Exit ends the program with a code; the line after it never runs.
+    if (args.Len() > 5) {
+        Env.Exit(3)
+    }
+    Console.Println("done")
+}

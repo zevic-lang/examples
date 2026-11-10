@@ -1,0 +1,15 @@
+size 2, has one: true, has ten: false
+get: 2 true, getOr: -1
+getOrInsert: 3 then 3
+after updates: four=4 one=101 three=3 two=2
+word counts: and=2 bat=1 cat=1 hat=1 the=3
+  3 the
+  2 and
+  1 bat
+  1 cat
+  1 hat
+after Extend: five=5 four=4 one=-1 three=3 two=2
+RemoveWhere removed 1
+what is left: one=-1 three=3 two=2
+empty after Clear: true
+size 0

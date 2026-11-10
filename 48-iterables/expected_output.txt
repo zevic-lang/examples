@@ -1,0 +1,26 @@
+Take(3): 5, 3, 8
+Skip(5): 2, 7
+TakeWhile(x != 1): 5, 3, 8
+SkipWhile(x != 1): 1, 9, 2, 7
+Chunk(3) sizes: 3, 3, 1
+squares of the odd numbers: 25, 9, 1, 81, 49
+FlatMap: 5, 50, 3, 30, 8, 80
+Zip stops at the shorter: 3 pairs
+third pair: 8c
+big: 5, 8, 9, 7
+small: 3, 1, 2
+even: 8, 2
+odd: 5, 3, 1, 9, 7
+Distinct: 3, 1, 2
+Min 1, Max 9, Min of nothing is None: true
+Sorted: 1, 2, 3, 5, 7, 8, 9
+Reversed: 7, 2, 9, 1, 8, 3, 5
+original is unchanged: 5, 3, 8, 1, 9, 2, 7
+all positive: true, any above 8: true
+total 35, average 5
+youngest Dee, oldest Cid
+by age: Dee, Bob, Ann, Eve, Cid
+in Lima: Eve
+in Oslo: Ann, Cid
+in Rome: Bob, Dee
+names of adults over 30: Ann, Cid, Eve

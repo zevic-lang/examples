@@ -1,0 +1,55 @@
+// Floating point math: the standard functions, rounding, special values and integer helpers.
+// Results are rounded for printing, so the output is the same on every system.
+// Modules: Zevic.Math.
+
+module Main
+
+import Zevic.Console
+import Zevic.Math
+import Zevic.Text
+
+// How far apart two numbers are.
+fn Distance(a: F64, b: F64) -> F64 {
+    if (a > b) { a - b } else { b - a }
+}
+
+// Three decimals, as text.
+fn R(x: F64) -> String {
+    Text.Format("%.3f", x)
+}
+
+fn Main() {
+    Console.Println("Pi = ${R(Math.Pi)}, E = ${R(Math.E)}")
+
+    // Roots and powers.
+    Console.Println("sqrt(2) = ${R(Math.Sqrt(2.0))}, hypot(3, 4) = ${R(Math.Hypot(3.0, 4.0))}")
+    Console.Println("2^10 = ${R(Math.Pow(2.0, 10.0))}, 2^0.5 = ${R(Math.Pow(2.0, 0.5))}")
+    Console.Println("exp(1) = ${R(Math.Exp(1.0))}, ln(e) = ${R(Math.Log(Math.E))}")
+    Console.Println("log2(1024) = ${R(Math.Log2(1024.0))}, log10(0.001) = ${R(Math.Log10(0.001))}")
+
+    // Trigonometry works in radians.
+    Console.Println("sin(pi/2) = ${R(Math.Sin(Math.Pi / 2.0))}, cos(pi) = ${R(Math.Cos(Math.Pi))}, tan(pi/4) = ${R(Math.Tan(Math.Pi / 4.0))}")
+    Console.Println("asin(1) = ${R(Math.Asin(1.0))}, acos(0) = ${R(Math.Acos(0.0))}, atan(1) = ${R(Math.Atan(1.0))}")
+    Console.Println("atan2(1, -1) = ${R(Math.Atan2(1.0, -1.0))} (135 degrees = ${R(Math.Atan2(1.0, -1.0) * 180.0 / Math.Pi)})")
+
+    // Rounding: four ways to get to an integer value.
+    for (x in [2.5, -2.5, 2.4, -2.6]) {
+        Console.Println("${x}: floor ${Math.Floor(x)}, ceil ${Math.Ceil(x)}, round ${Math.Round(x)}, trunc ${Math.Trunc(x)}")
+    }
+
+    // Special values: dividing by zero does not stop the program.
+    let inf: F64 = 1.0 / 0.0
+    let nan: F64 = 0.0 / 0.0
+    Console.Println("1/0 = ${inf}, -1/0 = ${-inf}, 0/0 is NaN: ${Math.IsNaN(nan)}")
+    Console.Println("NaN equals itself: ${nan == nan}, NaN is not smaller: ${!(nan < 1.0)}")
+    Console.Println("sqrt(-1) is NaN: ${Math.IsNaN(Math.Sqrt(-1.0))}")
+
+    // Floating point is binary: 0.1 + 0.2 is not exactly 0.3.
+    let sum: F64 = 0.1 + 0.2
+    Console.Println("0.1 + 0.2 == 0.3: ${sum == 0.3}, close enough: ${Distance(sum, 0.3) < 0.0000001}")
+    Console.Println("the bits of 1.0: ${Text.Format("%016x", Math.F64Bits(1.0))}")
+
+    // Integer division rounds toward zero, and the remainder has the sign of the dividend.
+    let a: I32 = -7
+    Console.Println("${a} / 2 = ${a / 2}, ${a} % 2 = ${a % 2}")
+}

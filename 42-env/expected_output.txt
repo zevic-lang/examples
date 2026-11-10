@@ -1,0 +1,13 @@
+arguments: 3
+  [--flag]
+  [value]
+  [two]
+same as Env.RawArgs: true
+unset: true
+set: hello
+empty but set: true
+absolute working directory: true
+absolute program path: true
+known system: true
+IsWindows agrees: true
+done

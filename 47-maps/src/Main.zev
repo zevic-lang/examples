@@ -1,0 +1,63 @@
+// Maps: lookups, defaults, counting, updating, merging and removing. A Map has no defined order, so every
+// listing below goes through sorted keys.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+// The map as "key=value" pairs in key order.
+fn Show(label: String, m: Map<String, I32>) {
+    let keys: Array<String> = m.Keys().Sorted()
+    Console.Println("${label}: ${keys.Map((k: String) => "${k}=${m[k]}").Join(" ")}")
+}
+
+fn Main() {
+    // Set and read. Get gives an Option; GetOr falls back to a default.
+    mut m: Map<String, I32> = Map.New()
+    m.Set("one", 1)
+    m.Set("two", 2)
+    Console.Println("size ${m.Len()}, has one: ${m.Contains("one")}, has ten: ${m.Contains("ten")}")
+    Console.Println("get: ${m.Get("two").Unwrap()} ${m.Get("ten").IsNone()}, getOr: ${m.GetOr("ten", -1)}")
+
+    // GetOrInsert stores the default the first time and returns what is stored.
+    Console.Println("getOrInsert: ${m.GetOrInsert("three", 3)} then ${m.GetOrInsert("three", 99)}")
+
+    // Update(key, d, f) stores f(old) when the key exists, and just d when it does not.
+    m.Update("one", 0, (v: I32) => v + 100)
+    m.Update("four", 4, (v: I32) => v + 100)
+    Show("after updates", m)
+
+    // Counting words is the classic use of Update.
+    let text: String = "the cat and the hat and the bat"
+    mut counts: Map<String, I32> = Map.New()
+    for (w in Text.Words(text)) {
+        counts.Update(w, 1, (n: I32) => n + 1)
+    }
+    Show("word counts", counts)
+
+    // Entries are (key, value) pairs; sort them by value, then by key, to rank the words.
+    let ranked: Array<(String, I32)> = counts.Entries().SortedBy((a: (String, I32), b: (String, I32)) => {
+        let (ka, va): (String, I32) = a
+        let (kb, vb): (String, I32) = b
+        if (va != vb) { vb - va } else { ka.Compare(kb) }
+    })
+    for (e in ranked) {
+        let (k, v): (String, I32) = e
+        Console.Println("  ${v} ${k}")
+    }
+
+    // Merge another map in (its values win), and build one from pairs.
+    let other: Map<String, I32> = Map<String, I32>.FromPairs([("one", -1), ("five", 5)])
+    m.Extend(other)
+    Show("after Extend", m)
+
+    // Remove one key, or every entry that matches a test.
+    m.Remove("four")
+    let removed: I64 = m.RemoveWhere((k: String, v: I32) => v > 3)
+    Console.Println("RemoveWhere removed ${removed}")
+    Show("what is left", m)
+    Console.Println("not empty before Clear: ${m.Len() > 0}")
+    m.Clear()
+    Console.Println("size ${m.Len()}")
+}

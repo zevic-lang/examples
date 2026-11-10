@@ -1,0 +1,52 @@
+// Sets: membership, the algebra of sets (union, intersection, difference) and comparisons.
+// A Set has no order, so the examples sort before printing.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+// A set as a sorted, comma separated list.
+fn Show(label: String, s: Set<I32>) {
+    Console.Println("${label}: {${s.ToArray().Sorted().Map((x: I32) => "${x}").Join(", ")}}")
+}
+
+fn Main() {
+    let evens: Set<I32> = Set<I32>.FromArray([2, 4, 6, 8, 10])
+    let small: Set<I32> = Set<I32>.FromArray([1, 2, 3, 4, 5])
+
+    // Membership and size. Adding twice does nothing.
+    mut s: Set<I32> = Set.New()
+    s.Add(3)
+    s.Add(1)
+    s.Add(3)
+    Console.Println("size ${s.Len()}, has 3: ${s.Contains(3)}, has 2: ${s.Contains(2)}")
+    s.Remove(3)
+    Show("after Remove", s)
+    s.AddAll([7, 8, 9])
+    Show("after AddAll", s)
+
+    // The algebra: each operation returns a new set.
+    Show("union", evens.Union(small))
+    Show("intersection", evens.Intersect(small))
+    Show("difference (evens - small)", evens.Difference(small))
+    Show("symmetric difference", evens.SymmetricDifference(small))
+
+    // Relations.
+    let few: Set<I32> = Set<I32>.FromArray([2, 4])
+    Console.Println("{2, 4} is a subset of evens: ${few.IsSubset(evens)}")
+    Console.Println("evens is a superset of {2, 4}: ${evens.IsSuperset(few)}")
+    Console.Println("evens and small are disjoint: ${evens.IsDisjoint(small)}")
+    Console.Println("evens and {1, 3} are disjoint: ${evens.IsDisjoint(Set<I32>.FromArray([1, 3]))}")
+    Console.Println("equal sets: ${Set<I32>.FromArray([3, 2, 1]).Equals(Set<I32>.FromArray([1, 2, 3, 3]))}")
+
+    // A classic use: remove the duplicates from a list.
+    let words: Array<String> = ["to", "be", "or", "not", "to", "be"]
+    let unique: Set<String> = Set<String>.FromArray(words)
+    Console.Println("${words.Len()} words, ${unique.Len()} different: ${unique.ToArray().Sorted().Join(" ")}")
+
+    // Sets of text work the same way: which letters do two words share?
+    let a: Set<String> = Set<String>.FromArray(Text.ToChars("zevic").Map((c: Char) => "${c}"))
+    let b: Set<String> = Set<String>.FromArray(Text.ToChars("device").Map((c: Char) => "${c}"))
+    Console.Println("shared letters: ${a.Intersect(b).ToArray().Sorted().Join("")}")
+}

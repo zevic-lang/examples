@@ -1,0 +1,79 @@
+// Working with sequences: the methods every Array (and every Iterable) has, chained into small pipelines.
+
+module Main
+
+import Zevic.Console
+
+// An array as "a, b, c".
+fn Show<T>(label: String, xs: Array<T>) {
+    Console.Println("${label}: ${xs.Map((x: T) => "${x}").Join(", ")}")
+}
+
+struct Person {
+    Name: String
+    Age: I32
+    City: String
+
+    fn Init(name: String, age: I32, city: String) {
+        this.Name = name
+        this.Age = age
+        this.City = city
+    }
+}
+
+fn Main() {
+    let n: Array<I32> = [5, 3, 8, 1, 9, 2, 7]
+
+    // Cutting a sequence into pieces.
+    Show("Take(3)", n.Take(3))
+    Show("Skip(5)", n.Skip(5))
+    Show("TakeWhile(x != 1)", n.TakeWhile((x: I32) => x != 1))
+    Show("SkipWhile(x != 1)", n.SkipWhile((x: I32) => x != 1))
+    Show("Chunk(3) sizes", n.Chunk(3).Map((c: Array<I32>) => c.Len()))
+
+    // Transforming: Map, Filter, FlatMap.
+    Show("squares of the odd numbers", n.Filter((x: I32) => x % 2 == 1).Map((x: I32) => x * x))
+    Show("FlatMap", n.Take(3).FlatMap((x: I32) => [x, x * 10]))
+
+    // Combining.
+    let pairs: Array<(I32, String)> = n.Take(3).Zip(["a", "b", "c", "d"])
+    Console.Println("Zip stops at the shorter: ${pairs.Len()} pairs")
+    let (num, letter): (I32, String) = pairs[2]
+    Console.Println("third pair: ${num}${letter}")
+
+    // Splitting into two groups, or into many.
+    let (big, small): (Array<I32>, Array<I32>) = n.Partition((x: I32) => x > 4)
+    Show("big", big)
+    Show("small", small)
+    let byParity: Map<Bool, Array<I32>> = n.GroupBy((x: I32) => x % 2 == 0)
+    Show("even", byParity[true])
+    Show("odd", byParity[false])
+
+    // Duplicates, extremes, ordering.
+    Show("Distinct", [3, 1, 3, 2, 1].Distinct())
+    Console.Println("Min ${n.Min().Unwrap()}, Max ${n.Max().Unwrap()}, Min of nothing is None: ${n.Take(0).Min().IsNone()}")
+    Show("Sorted", n.Sorted())
+    Show("Reversed", n.Reversed())
+    Show("original is unchanged", n)
+
+    // Questions (All, Any) and folding a sequence into one value with Reduce.
+    Console.Println("all positive: ${n.All((x: I32) => x > 0)}, any above 8: ${n.Any((x: I32) => x > 8)}")
+    let total: I32 = n.Reduce(0, (acc: I32, x: I32) => acc + x)
+    Console.Println("total ${total}, average ${total / n.Len().ToI32Wrap()}")
+
+    // The same on records.
+    let people: Array<Person> = [
+        Person.New("Ann", 31, "Oslo"),
+        Person.New("Bob", 25, "Rome"),
+        Person.New("Cid", 42, "Oslo"),
+        Person.New("Dee", 19, "Rome"),
+        Person.New("Eve", 36, "Lima"),
+    ]
+    Console.Println("youngest ${people.MinBy((p: Person) => p.Age).Unwrap().Name}, oldest ${people.MaxBy((p: Person) => p.Age).Unwrap().Name}")
+    Show("by age", people.SortedBy((a: Person, b: Person) => a.Age - b.Age).Map((p: Person) => p.Name))
+    let byCity: Map<String, Array<Person>> = people.GroupBy((p: Person) => p.City)
+    for (city in byCity.Keys().Sorted()) {
+        Show("in ${city}", byCity[city].Map((p: Person) => p.Name))
+    }
+    Show("names of adults over 30", people.Filter((p: Person) => p.Age > 30).Map((p: Person) => p.Name))
+}
