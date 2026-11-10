@@ -1,0 +1,21 @@
+duplicate name: Invalid
+refused "../evil": Invalid
+refused "/abs": Invalid
+refused "a/../../b": Invalid
+refused "C:/x": Invalid
+entries written: 6
+comment: example archive, entries: 6
+  file hello.txt size=5 stored smaller=false
+  dir  docs/ size=0 stored smaller=false
+  file docs/long.txt size=6600 stored smaller=true
+  file docs/data.bin size=5 stored smaller=false
+  file 日本語/ファイル.txt size=16 stored smaller=false
+  file dated.txt size=1 stored smaller=false
+hello
+utf-8 names work
+modified: 2024-05-17T13:45:30Z
+missing entry: true
+extracted 5 files
+dated.txt docs docs/data.bin docs/long.txt hello.txt 日本語 日本語/ファイル.txt
+zipped the directory: dated.txt docs/ docs/data.bin docs/long.txt hello.txt 日本語/ 日本語/ファイル.txt
+not a zip: true

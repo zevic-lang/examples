@@ -1,0 +1,75 @@
+// Compressing data: raw Deflate, zlib and gzip, in memory and for files.
+// Sizes are shown as comparisons ("smaller than the input") rather than exact byte counts.
+// Modules: Zevic.Deflate, Zevic.Zlib, Zevic.Gzip, Zevic.Bytes, Zevic.Digest, Zevic.Fs, Zevic.Path.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Deflate
+import Zevic.Digest
+import Zevic.Fs
+import Zevic.Gzip
+import Zevic.Path
+import Zevic.Text
+import Zevic.Zlib
+
+fn Main() {
+    // Repetitive text compresses well.
+    let text: String = Text.Repeat("the quick brown fox jumps over the lazy dog. ", 200)
+    let input: Array<U8> = Bytes.FromString(text)
+    Console.Println("input: ${input.Len()} bytes")
+
+    // Raw Deflate (RFC 1951): no header, no checksum.
+    let raw: Array<U8> = Deflate.Compress(input)
+    Console.Println("deflate is smaller: ${raw.Len() < input.Len() / 10}")
+    Console.Println("deflate round trip: ${Deflate.Decompress(raw).Unwrap() == input}")
+
+    // zlib (RFC 1950) wraps Deflate with a header and an Adler-32 checksum.
+    let z: Array<U8> = Zlib.Compress(input)
+    Console.Println("zlib header: ${z[0] == 0x78}, round trip: ${Zlib.Decompress(z).Unwrap() == input}")
+
+    // gzip (RFC 1952) wraps it with a header and a CRC-32; IsGzip looks at the magic number.
+    let gz: Array<U8> = Gzip.Compress(input)
+    Console.Println("is gzip: ${Gzip.IsGzip(gz)}, raw is gzip: ${Gzip.IsGzip(raw)}")
+    Console.Println("gzip round trip: ${Gzip.DecompressString(gz).Unwrap() == text}")
+
+    // A higher level is slower and not larger; level 0 only stores.
+    let fast: Array<U8> = Gzip.CompressLevel(input, 1)
+    let best: Array<U8> = Gzip.CompressLevel(input, 9)
+    let stored: Array<U8> = Gzip.CompressLevel(input, 0)
+    Console.Println("best <= fast: ${best.Len() <= fast.Len()}, stored is larger than the input: ${stored.Len() > input.Len()}")
+
+    // Random-looking data does not shrink (but still survives).
+    mut noise: Array<U8> = []
+    mut x: I64 = 12345
+    for (i in 0..2000) {
+        x = (x * 1103515245 + 12345) % 4294967296
+        noise.Push(((x / 65536) % 256).ToU8Wrap())
+    }
+    let packedNoise: Array<U8> = Gzip.Compress(noise)
+    Console.Println("noise does not shrink much: ${packedNoise.Len() > noise.Len() * 9 / 10}, survives: ${Gzip.Decompress(packedNoise).Unwrap() == noise}")
+
+    // Damaged or truncated data is an error, not a crash.
+    mut damaged: Array<U8> = Gzip.Compress(input)
+    damaged[damaged.Len() - 6] = damaged[damaged.Len() - 6] ^ 255
+    Console.Println("damaged data fails: ${Gzip.Decompress(damaged).IsErr()}")
+    Console.Println("truncated data fails: ${Gzip.Decompress(gz.Slice(0, gz.Len() / 2)).IsErr()}")
+    Console.Println("not gzip fails: ${Gzip.Decompress(Bytes.FromString("hello")).IsErr()}")
+
+    // Decompression has a size limit, so a small "bomb" cannot fill the memory.
+    let bomb: Array<U8> = Gzip.Compress(Array<U8>.Repeat(0, 100000))
+    Console.Println("limit of 1000 bytes: ${Gzip.DecompressLimit(bomb, 1000).IsErr()}, limit of 200000: ${Gzip.DecompressLimit(bomb, 200000).IsOk()}")
+
+    // Files: compress to name.gz and back.
+    let dir: String = Fs.MakeTempDir("compression").Unwrap()
+    let plain: String = Path.Join(dir, "notes.txt")
+    let packed: String = Path.Join(dir, "notes.txt.gz")
+    let back: String = Path.Join(dir, "notes.back")
+    Fs.WriteAll(plain, text).Unwrap()
+    Gzip.CompressFile(plain, packed).Unwrap()
+    Gzip.DecompressFile(packed, back).Unwrap()
+    Console.Println("file: smaller ${Fs.Size(packed).Unwrap() < Fs.Size(plain).Unwrap()}, same content ${Fs.ReadAll(back).Unwrap() == text}")
+    Console.Println("crc of the text: ${Digest.Crc32(input) == Digest.Crc32(Fs.ReadBytes(back).Unwrap())}")
+    Fs.RemoveAll(dir).Unwrap()
+}

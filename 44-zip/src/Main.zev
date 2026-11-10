@@ -1,0 +1,69 @@
+// Zip archives: build one in memory, list and read it, extract it, and see that dangerous names are refused.
+// Modules: Zevic.Zip, Zevic.Fs, Zevic.Path, Zevic.DateTime.
+
+module Main
+
+import Zevic.Console
+import Zevic.DateTime
+import Zevic.Fs
+import Zevic.Path
+import Zevic.Text
+import Zevic.Zip
+
+// The error kind as a word.
+fn Why(e: Error) -> String { e.Kind().ToString() }
+
+fn Main() {
+    // Build an archive. Names use "/" and may not climb out with "..".
+    mut w: Zip.ZipWriter = Zip.ZipWriter.New()
+    w.SetComment("example archive")
+    w.AddString("hello.txt", "hello").Unwrap()
+    w.AddDir("docs").Unwrap()
+    w.AddString("docs/long.txt", Text.Repeat("zip me, zip me again. ", 300)).Unwrap()
+    w.Add("docs/data.bin", [0, 1, 2, 255, 254]).Unwrap()
+    w.AddString("日本語/ファイル.txt", "utf-8 names work").Unwrap()
+    // A fixed time makes the archive reproducible.
+    w.AddAt("dated.txt", [120], DateTime.Make(2024, 5, 17, 13, 45, 30).Unwrap()).Unwrap()
+
+    match (w.AddString("hello.txt", "again")) {
+        Ok(_x) => Console.Println("duplicate accepted?"),
+        Err(e) => Console.Println("duplicate name: ${Why(e)}"),
+    }
+    for (bad in ["../evil", "/abs", "a/../../b", "C:/x"]) {
+        match (w.AddString(bad, "x")) {
+            Ok(_x) => Console.Println("${bad} accepted?"),
+            Err(e) => Console.Println("refused \"${bad}\": ${Why(e)}"),
+        }
+    }
+    let bytes: Array<U8> = w.Finish().Unwrap()
+    Console.Println("entries written: ${w.Len()}")
+
+    // Read it back: the table of contents first.
+    let z: Zip.Archive = Zip.Open(bytes).Unwrap()
+    Console.Println("comment: ${z.Comment()}, entries: ${z.Len()}")
+    for (e in z.Entries()) {
+        let kind: String = if (e.IsDir()) { "dir " } else { "file" }
+        Console.Println("  ${kind} ${e.Name} size=${e.Size} stored smaller=${e.CompressedSize < e.Size}")
+    }
+    Console.Println(z.ReadString("hello.txt").Unwrap())
+    Console.Println(z.ReadString("日本語/ファイル.txt").Unwrap())
+    Console.Println("modified: ${z.Find("dated.txt").Unwrap().Modified().ToIso()}")
+    Console.Println("missing entry: ${z.ReadFile("nothing").IsErr()}")
+
+    // Extract into a directory, then archive a directory.
+    let dir: String = Fs.MakeTempDir("zip-example").Unwrap()
+    let out: String = Path.Join(dir, "out")
+    let count: I64 = z.ExtractAll(out).Unwrap()
+    Console.Println("extracted ${count} files")
+    let names: Array<String> = Fs.Walk(out).Unwrap().Map((p: String) => Text.Replace(Path.Relative(out, p).Unwrap(), Path.Separator(), "/"))
+    Console.Println(names.Sorted().Join(" "))
+
+    let again: String = Path.Join(dir, "again.zip")
+    Zip.ZipDir(out, again).Unwrap()
+    let back: Zip.Archive = Zip.OpenFile(again).Unwrap()
+    Console.Println("zipped the directory: ${back.Names().Sorted().Join(" ")}")
+
+    // Damaged data is an error.
+    Console.Println("not a zip: ${Zip.Open([1, 2, 3, 4]).IsErr()}")
+    Fs.RemoveAll(dir).Unwrap()
+}

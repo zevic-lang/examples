@@ -1,0 +1,59 @@
+// Tar archives, plain and gzip-compressed (.tar.gz): build, read, extract.
+// Modules: Zevic.Tar, Zevic.Gzip, Zevic.Fs, Zevic.Path, Zevic.DateTime.
+
+module Main
+
+import Zevic.Console
+import Zevic.DateTime
+import Zevic.Fs
+import Zevic.Gzip
+import Zevic.Path
+import Zevic.Tar
+import Zevic.Text
+
+fn Main() {
+    // Build an archive in memory. Directories end up as entries of their own.
+    mut w: Tar.TarWriter = Tar.TarWriter.New()
+    w.AddString("README", "read me").Unwrap()
+    w.AddDir("src").Unwrap()
+    w.AddString("src/main.txt", Text.Repeat("line of text\n", 100)).Unwrap()
+    w.AddAt("src/dated.txt", [65, 66, 67], DateTime.Make(2024, 5, 17, 13, 45, 30).Unwrap()).Unwrap()
+    w.AddString("a-name-that-is-longer-than-one-hundred-characters/with/some/more/directories/and-a-file-name-that-keeps-going.txt", "long names work").Unwrap()
+    let plain: Array<U8> = w.Finish()
+    Console.Println("entries written: ${w.Len()}")
+    Console.Println("size is a multiple of 512: ${plain.Len() % 512 == 0}")
+
+    // Read it back.
+    let t: Tar.Archive = Tar.Open(plain).Unwrap()
+    for (e in t.Entries()) {
+        let kind: String = if (e.IsDir()) { "dir " } else { "file" }
+        Console.Println("  ${kind} ${e.Name} (${e.Size} bytes)")
+    }
+    Console.Println(t.ReadString("README").Unwrap())
+    Console.Println("modified: ${t.Find("src/dated.txt").Unwrap().Modified().ToIso()}")
+
+    // The same archive, compressed. Open recognises gzip by itself.
+    let gz: Array<U8> = w.FinishGz()
+    Console.Println("tar.gz: gzip ${Gzip.IsGzip(gz)}, smaller ${gz.Len() < plain.Len()}")
+    let fromGz: Tar.Archive = Tar.Open(gz).Unwrap()
+    Console.Println("same entries: ${fromGz.Names() == t.Names()}")
+
+    // Files and directories.
+    let dir: String = Fs.MakeTempDir("tar-example").Unwrap()
+    let archive: String = Path.Join(dir, "all.tar.gz")
+    w.WriteTo(archive).Unwrap()
+    let out: String = Path.Join(dir, "out")
+    let count: I64 = Tar.Untar(archive, out).Unwrap()
+    Console.Println("extracted ${count} files")
+    Console.Println(Fs.ReadAll(Path.Join(Path.Join(out, "src"), "dated.txt")).Unwrap())
+
+    // Archive a directory and list the result.
+    let packed: String = Path.Join(dir, "out.tar")
+    Tar.TarDir(out, packed).Unwrap()
+    Console.Println(Tar.OpenFile(packed).Unwrap().Names().Sorted().Join(" | "))
+
+    // Dangerous names are refused when writing, and truncated data is an error.
+    Console.Println("climbing name refused: ${w.AddString("../evil", "x").IsErr()}")
+    Console.Println("truncated archive fails: ${Tar.Open(plain.Slice(0, 2500)).IsErr()}")
+    Fs.RemoveAll(dir).Unwrap()
+}

@@ -1,0 +1,14 @@
+input: 9000 bytes
+deflate is smaller: true
+deflate round trip: true
+zlib header: true, round trip: true
+is gzip: true, raw is gzip: false
+gzip round trip: true
+best <= fast: true, stored is larger than the input: true
+noise does not shrink much: true, survives: true
+damaged data fails: true
+truncated data fails: true
+not gzip fails: true
+limit of 1000 bytes: true, limit of 200000: true
+file: smaller true, same content true
+crc of the text: true

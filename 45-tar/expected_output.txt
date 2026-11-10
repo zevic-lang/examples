@@ -1,0 +1,16 @@
+entries written: 5
+size is a multiple of 512: true
+  file README (7 bytes)
+  dir  src (0 bytes)
+  file src/main.txt (1300 bytes)
+  file src/dated.txt (3 bytes)
+  file a-name-that-is-longer-than-one-hundred-characters/with/some/more/directories/and-a-file-name-that-keeps-going.txt (15 bytes)
+read me
+modified: 2024-05-17T13:45:30Z
+tar.gz: gzip true, smaller true
+same entries: true
+extracted 4 files
+ABC
+README | a-name-that-is-longer-than-one-hundred-characters | a-name-that-is-longer-than-one-hundred-characters/with | a-name-that-is-longer-than-one-hundred-characters/with/some | a-name-that-is-longer-than-one-hundred-characters/with/some/more | a-name-that-is-longer-than-one-hundred-characters/with/some/more/directories | a-name-that-is-longer-than-one-hundred-characters/with/some/more/directories/and-a-file-name-that-keeps-going.txt | src | src/dated.txt | src/main.txt
+climbing name refused: true
+truncated archive fails: true
