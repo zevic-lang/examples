@@ -8,7 +8,7 @@ module Main
 import Zevic.Console
 import Zevic.Text
 
-let MazeText: String = "" "
+let MazeText: String = """
     S.#.......
     .##.####.#
     ....#..#..
@@ -19,7 +19,7 @@ let MazeText: String = "" "
     .##...#...
     .#.####.#.
     ...#....#E
-    " ""
+    """
 
 fn Main() {
     let rows: Array<String> = Text.Lines(MazeText)

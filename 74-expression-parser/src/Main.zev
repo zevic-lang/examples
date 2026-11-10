@@ -13,6 +13,7 @@
 
 module Main
 
+import Zevic.Bytes
 import Zevic.Chars
 import Zevic.Console
 
@@ -26,7 +27,7 @@ enum Expr {
         match (this) {
             Expr.Num(n) => "${n}",
             Expr.Neg(e) => "(-${e.e.Show()})",
-            Expr.Bin(op, a, b) => "(${a.e.Show()} ${String.FromByte(op)} ${b.e.Show()})",
+            Expr.Bin(op, a, b) => "(${a.e.Show()} ${byteText(op)} ${b.e.Show()})",
         }
     }
 
@@ -116,14 +117,18 @@ class Parser {
         let start: I64 = this.pos
         while (this.pos < this.src.Len()) {
             let d: U8 = this.src.ByteAt(this.pos)
-            if (!Chars.IsDigit(Char.FromByte(d)) && d != b'.') { break }
+            if (!(d >= b'0' && d <= b'9') && d != b'.') { break }
             this.pos += 1
         }
         if (this.pos == start) {
             if (c == 0_U8) { return Err(this.fail("unexpected end")) }
-            return Err(this.fail("unexpected '${String.FromByte(c)}'"))
+            return Err(this.fail("unexpected '${byteText(c)}'"))
         }
-        let n: F64 = this.src.Slice(start, this.pos).ToF64().MapErr((e: Error) => this.fail("bad number"))?
+        let parsed: Result<F64, Error> = this.src.Slice(start, this.pos).ToF64()
+        let n: F64 = match (parsed) {
+            Ok(v) => v,
+            Err(_) => return Err(this.fail("bad number")),
+        }
         Ok(Expr.Num(n))
     }
 }
@@ -131,8 +136,13 @@ class Parser {
 fn Calc(text: String) -> Result<Expr, Error> {
     mut p: Parser = Parser.New(text)
     let e: Expr = p.expr()?
-    if (p.peek() != 0_U8) { return Err(p.fail("unexpected '${String.FromByte(p.peek())}'")) }
+    if (p.peek() != 0_U8) { return Err(p.fail("unexpected '${byteText(p.peek())}'")) }
     Ok(e)
+}
+
+// One byte as a one-character String (the input is ASCII).
+fn byteText(b: U8) -> String {
+    Bytes.ToStringLossy([b])
 }
 
 fn Main() {

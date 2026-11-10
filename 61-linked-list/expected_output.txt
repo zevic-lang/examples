@@ -1,0 +1,9 @@
+built: [1, 2, 3, 4, 5] (len 5)
+reversed: [5, 4, 3, 2, 1] (len 5)
+push back after reverse: [5, 4, 3, 2, 1, 0] (len 6)
+sum = 15
+even = 3
+has 4 = true
+popped: 5 4 3 2 1 0, len now 0
+word one
+word two

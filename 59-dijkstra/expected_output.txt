@@ -1,0 +1,7 @@
+heap pops: 8
+A -> A: distance 0, path A
+A -> B: distance 7, path A B
+A -> C: distance 9, path A C
+A -> D: distance 20, path A C D
+A -> E: distance 20, path A C F E
+A -> F: distance 11, path A C F

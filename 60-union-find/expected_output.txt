@@ -1,0 +1,22 @@
+union(0, 1): merged, groups = 9
+union(2, 3): merged, groups = 8
+union(1, 3): merged, groups = 7
+union(4, 5): merged, groups = 6
+union(6, 7): merged, groups = 5
+union(5, 7): merged, groups = 4
+union(0, 3): already together, groups = 4
+union(8, 9): merged, groups = 3
+0 and 2 together: true
+0 and 4 together: false
+group of 4: 0 1 2 3
+group of 4: 4 5 6 7
+group of 2: 8 9
+take 7-6 (1)
+take 2-8 (2)
+take 6-5 (2)
+take 0-1 (4)
+take 2-5 (4)
+take 2-3 (7)
+take 0-7 (8)
+take 3-4 (9)
+minimum spanning tree weight: 37

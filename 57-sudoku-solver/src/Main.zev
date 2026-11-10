@@ -7,7 +7,7 @@ module Main
 import Zevic.Console
 import Zevic.Text
 
-let Puzzle: String = "" "
+let Puzzle: String = """
     530070000
     600195000
     098000060
@@ -17,7 +17,7 @@ let Puzzle: String = "" "
     060000280
     000419005
     000080079
-    " ""
+    """
 
 fn Parse(text: String) -> Array<I32> {
     mut cells: Array<I32> = []
