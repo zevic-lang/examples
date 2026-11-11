@@ -1,0 +1,55 @@
+// A small `grep`: print the lines of standard input that match a regular expression.
+// Options: -n (line numbers), -i (ignore case), -v (invert), -c (only count). The arguments come from
+// args.txt and the text from input.txt, so the output is repeatable.
+// Shows: Zevic.Cli for the options and Zevic.Regex for the matching.
+// Library: Zevic.Cli, Zevic.Console, Zevic.Regex, Zevic.Text.
+
+module Main
+
+import Zevic.Cli
+import Zevic.Console
+import Zevic.Regex
+import Zevic.Text
+
+fn Main(args: Array<String>) {
+    mut app: Cli.Command = Cli.Command.New("grep", "Print the lines that match a pattern")
+    app.Flag("number", "n", "Show line numbers")
+    app.Flag("ignore-case", "i", "Ignore case")
+    app.Flag("invert", "v", "Show the lines that do not match")
+    app.Flag("count", "c", "Only count the matching lines")
+    app.Positional("pattern", "Regular expression", true)
+
+    let m: Cli.Matches = match (app.Parse(args)) {
+        Ok(m) => m,
+        Err(e) => {
+            Console.Println("error: ${e.Message()}")
+            return
+        },
+    }
+
+    let pattern: String = if (m.Flag("ignore-case")) { "(?i)" + m.Arg("pattern").Unwrap() } else { m.Arg("pattern").Unwrap() }
+    let re: Regex.Regex = match (Regex.Compile(pattern)) {
+        Ok(re) => re,
+        Err(e) => {
+            Console.Println("bad pattern: ${e.Message()}")
+            return
+        },
+    }
+
+    let lines: Array<String> = Text.Lines(Console.ReadAll())
+    mut count: I64 = 0
+    for (i in 0..lines.Len()) {
+        let hit: Bool = re.IsMatch(lines[i]) != m.Flag("invert")
+        if (!hit) { continue }
+        count += 1
+        if (m.Flag("count")) { continue }
+        if (m.Flag("number")) {
+            Console.Println("${i + 1}: ${lines[i]}")
+        } else {
+            Console.Println(lines[i])
+        }
+    }
+    if (m.Flag("count")) {
+        Console.Println("${count}")
+    }
+}

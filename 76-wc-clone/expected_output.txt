@@ -1,0 +1,11 @@
+      5 lines
+     29 words
+    149 characters
+    169 bytes
+longest line: 44 characters, line 1
+different words: 18
+   7 the
+   3 fox
+   2 dog
+   1 away
+   1 barks

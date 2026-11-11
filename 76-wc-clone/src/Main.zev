@@ -1,0 +1,53 @@
+// A small `wc`: lines, words, bytes and characters of the standard input (here: input.txt), plus the
+// longest line and the five most common words.
+// Shows: reading all of stdin, UTF-8 aware counting (bytes and characters differ), and Map for counting.
+// Library: Zevic.Console, Zevic.Text, Zevic.Chars.
+
+module Main
+
+import Zevic.Chars
+import Zevic.Console
+import Zevic.Text
+
+fn Main() {
+    let input: String = Console.ReadAll()
+
+    // Lines: a final line without a newline still counts.
+    let lines: Array<String> = Text.Lines(input)
+    let words: Array<String> = Text.Words(input)
+    let chars: I64 = Text.ToChars(input).Len()
+    Console.Println("${Text.PadLeft("${lines.Len()}", 7, ' ')} lines")
+    Console.Println("${Text.PadLeft("${words.Len()}", 7, ' ')} words")
+    Console.Println("${Text.PadLeft("${chars}", 7, ' ')} characters")
+    Console.Println("${Text.PadLeft("${input.Len()}", 7, ' ')} bytes")
+
+    // The longest line, measured in characters.
+    mut longest: String = ""
+    mut longestAt: I64 = 0
+    for (i in 0..lines.Len()) {
+        if (Text.ToChars(lines[i]).Len() > Text.ToChars(longest).Len()) {
+            longest = lines[i]
+            longestAt = i + 1
+        }
+    }
+    Console.Println("longest line: ${Text.ToChars(longest).Len()} characters, line ${longestAt}")
+
+    // Word frequencies, ignoring case and punctuation.
+    mut counts: Map<String, I64> = Map.New()
+    for (w in words) {
+        let clean: String = Text.FromChars(Text.ToChars(w).Filter((c: Char) => Chars.IsAlphaNumeric(c) || c == '\''))
+        if (clean.Len() > 0) {
+            counts.Update(Text.ToLower(clean), 1, (n: I64) => n + 1)
+        }
+    }
+    let ranked: Array<(String, I64)> = counts.Entries().SortedBy((a: (String, I64), b: (String, I64)) => {
+        let (ka, va): (String, I64) = a
+        let (kb, vb): (String, I64) = b
+        if (va != vb) { (vb - va).ToI32Wrap() } else { ka.Compare(kb) }
+    })
+    Console.Println("different words: ${counts.Len()}")
+    for (i in 0..5) {
+        let (w, n): (String, I64) = ranked[i]
+        Console.Println("${Text.PadLeft("${n}", 4, ' ')} ${w}")
+    }
+}

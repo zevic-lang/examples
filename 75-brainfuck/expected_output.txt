@@ -1,0 +1,7 @@
+hello: Hello World!
+cat: zevic
+add: 7
+unmatched [: error: unmatched [ at 1
+unmatched ]: error: unmatched ] at 0
+endless loop: error: stopped after 5000 steps
+left of the tape: error: moved off the left end of the tape

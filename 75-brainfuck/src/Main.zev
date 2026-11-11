@@ -1,0 +1,104 @@
+// A Brainfuck interpreter: eight commands, a tape of bytes and a program counter. It runs the classic
+// "Hello World!" program and a few smaller ones. The jump targets of [ and ] are worked out once, before running.
+// Shows: a byte array as the tape, wrap-around arithmetic on U8, a stack for matching brackets, and Result.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+
+// Where each [ and ] jumps to, or an error for unbalanced brackets.
+fn jumpTable(code: Array<U8>) -> Result<Array<I64>, Error> {
+    mut table: Array<I64> = Array<I64>.Repeat(0, code.Len())
+    mut stack: Array<I64> = []
+    for (i in 0..code.Len()) {
+        if (code[i] == b'[') {
+            stack.Push(i)
+        } else if (code[i] == b']') {
+            match (stack.Pop()) {
+                Some(open) => {
+                    table[open] = i
+                    table[i] = open
+                },
+                None => return Err(Error.New(ErrorKind.Invalid, "unmatched ] at ${i}")),
+            }
+        }
+    }
+    if (stack.Len() > 0) {
+        return Err(Error.New(ErrorKind.Invalid, "unmatched [ at ${stack[0]}"))
+    }
+    Ok(table)
+}
+
+// Run `program` with the given input bytes; returns what it printed, or an error. A step limit stops
+// programs that never end.
+fn run(program: String, input: String, limit: I64) -> Result<String, Error> {
+    let code: Array<U8> = Bytes.FromString(program)
+    let jumps: Array<I64> = jumpTable(code)?
+    let source: Array<U8> = Bytes.FromString(input)
+    mut tape: Array<U8> = Array<U8>.Repeat(0, 30000)
+    mut out: Array<U8> = []
+    mut pc: I64 = 0
+    mut ptr: I64 = 0
+    mut inPos: I64 = 0
+    mut steps: I64 = 0
+    while (pc < code.Len()) {
+        steps += 1
+        if (steps > limit) {
+            return Err(Error.New(ErrorKind.Invalid, "stopped after ${limit} steps"))
+        }
+        let op: U8 = code[pc]
+        if (op == b'>') {
+            ptr += 1
+            if (ptr >= tape.Len()) { return Err(Error.New(ErrorKind.Invalid, "moved off the right end of the tape")) }
+        } else if (op == b'<') {
+            ptr -= 1
+            if (ptr < 0) { return Err(Error.New(ErrorKind.Invalid, "moved off the left end of the tape")) }
+        } else if (op == b'+') {
+            tape[ptr] = ((tape[ptr].ToI32() + 1) % 256).ToU8Wrap()
+        } else if (op == b'-') {
+            tape[ptr] = ((tape[ptr].ToI32() + 255) % 256).ToU8Wrap()
+        } else if (op == b'.') {
+            out.Push(tape[ptr])
+        } else if (op == b',') {
+            // At the end of the input the cell becomes 0, which is what lets programs stop reading.
+            if (inPos < source.Len()) {
+                tape[ptr] = source[inPos]
+                inPos += 1
+            } else {
+                tape[ptr] = 0
+            }
+        } else if (op == b'[') {
+            if (tape[ptr] == 0) { pc = jumps[pc] }
+        } else if (op == b']') {
+            if (tape[ptr] != 0) { pc = jumps[pc] }
+        }
+        pc += 1
+    }
+    Ok(Bytes.ToStringLossy(out))
+}
+
+fn Show(label: String, r: Result<String, Error>) {
+    match (r) {
+        Ok(text) => Console.Println("${label}: ${text}"),
+        Err(e) => Console.Println("${label}: error: ${e.Message()}"),
+    }
+}
+
+fn Main() {
+    let hello: String = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+."
+    Show("hello", run(hello, "", 100000))
+
+    // Copy the input to the output: read a byte, print it, repeat until there is no more input.
+    Show("cat", run(",[.,]", "zevic", 100000))
+
+    // 3 + 4: the loop moves the first cell into the second, then 48 is added to make the digit '7'.
+    Show("add", run("+++>++++<[->+<]>>++++++++[<++++++>-]<.", "", 100000))
+
+    // Mistakes are reported, not crashed on.
+    Show("unmatched [", run("+[", "", 1000))
+    Show("unmatched ]", run("]", "", 1000))
+    Show("endless loop", run("+[]", "", 5000))
+    Show("left of the tape", run("<", "", 1000))
+}
