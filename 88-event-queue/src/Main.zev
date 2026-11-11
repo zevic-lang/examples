@@ -1,111 +1,120 @@
-// A priority event queue driving a small discrete-event simulation. Events carry a time and a name; the queue
-// always yields the earliest one, ties are broken by insertion order, and handlers may schedule new events.
-// Shows: a binary min-heap written by hand, a Comparable-free ordering via explicit keys, and a loop that
-// consumes and produces work at the same time.
-// Library: Zevic.Console.
+// A discrete-event simulation: events carry a timestamp and sit in a priority queue (a binary min-heap that
+// is written out here), and the loop always pops the earliest one. Handlers may schedule further events.
+// The scenario is a small coffee shop: customers arrive, wait for the single barista, and leave.
+// Shows: a generic-free heap on a struct array, enums with payloads, and a simulation clock.
+// Library: Zevic.Console, Zevic.Text.
 
 module Main
 
 import Zevic.Console
+import Zevic.Text
+
+enum Kind {
+    Arrive(I64),
+    FinishOrder(I64),
+}
 
 struct Event {
-    Time: I64
+    At: I64
     Seq: I64
-    Name: String
+    What: Kind
 
-    fn Init(time: I64, seq: I64, name: String) {
-        this.Time = time
+    fn Init(at: I64, seq: I64, what: Kind) {
+        this.At = at
         this.Seq = seq
-        this.Name = name
+        this.What = what
     }
 }
 
-// True when a must be handled before b.
+// Earlier time first; equal times keep insertion order so the output is deterministic.
 fn before(a: Event, b: Event) -> Bool {
-    if (a.Time != b.Time) { a.Time < b.Time } else { a.Seq < b.Seq }
+    if (a.At != b.At) { a.At < b.At } else { a.Seq < b.Seq }
 }
 
 class Queue {
-    heap: Array<Event> = []
-    nextSeq: I64 = 0
+    items: Array<Event> = []
+    next: I64 = 0
 
-    fn Len() -> I64 { this.heap.Len() }
+    fn Len() -> I64 { this.items.Len() }
 
-    mut fn Push(time: I64, name: String) {
-        this.heap.Push(Event.New(time, this.nextSeq, name))
-        this.nextSeq = this.nextSeq + 1
-        mut i: I64 = this.heap.Len() - 1
+    mut fn Push(at: I64, what: Kind) {
+        this.items.Push(Event.New(at, this.next, what))
+        this.next = this.next + 1
+        mut i: I64 = this.items.Len() - 1
         while (i > 0) {
             let parent: I64 = (i - 1) / 2
-            if (!before(this.heap[i], this.heap[parent])) { break }
-            this.swap(i, parent)
+            if (!before(this.items[i], this.items[parent])) { break }
+            this.items.Swap(i, parent)
             i = parent
         }
     }
 
-    mut fn swap(i: I64, j: I64) {
-        let t: Event = this.heap[i]
-        this.heap[i] = this.heap[j]
-        this.heap[j] = t
-    }
-
-    mut fn Pop() -> Option<Event> {
-        let n: I64 = this.heap.Len()
-        if (n == 0) { return None }
-        let top: Event = this.heap[0]
-        this.heap[0] = this.heap[n - 1]
-        this.heap.Pop()
-        let size: I64 = n - 1
-        mut i: I64 = 0
-        while (true) {
-            let l: I64 = 2 * i + 1
-            let r: I64 = l + 1
-            mut best: I64 = i
-            if (l < size && before(this.heap[l], this.heap[best])) { best = l }
-            if (r < size && before(this.heap[r], this.heap[best])) { best = r }
-            if (best == i) { break }
-            this.swap(i, best)
-            i = best
+    mut fn Pop() -> Event {
+        let top: Event = this.items[0]
+        let last: Event = this.items.Pop().Unwrap()
+        if (this.items.Len() > 0) {
+            this.items[0] = last
+            mut i: I64 = 0
+            while (true) {
+                let l: I64 = 2 * i + 1
+                let r: I64 = 2 * i + 2
+                mut m: I64 = i
+                if (l < this.items.Len() && before(this.items[l], this.items[m])) { m = l }
+                if (r < this.items.Len() && before(this.items[r], this.items[m])) { m = r }
+                if (m == i) { break }
+                this.items.Swap(i, m)
+                i = m
+            }
         }
-        Some(top)
+        top
     }
+}
+
+fn clock(t: I64) -> String {
+    // Minutes after 08:00.
+    let h: I64 = 8 + t / 60
+    let m: I64 = t % 60
+    "${Text.PadLeft(h.ToString(), 2, '0')}:${Text.PadLeft(m.ToString(), 2, '0')}"
 }
 
 fn Main() {
     mut q: Queue = Queue.New()
-    q.Push(5, "coffee machine ready")
-    q.Push(1, "customer arrives")
-    q.Push(3, "customer orders")
-    q.Push(3, "barista notices") // same time as the order: handled second
-    q.Push(9, "shop closes")
+    // Customers arrive at these minutes; making a drink takes 4 minutes.
+    let arrivals: Array<I64> = [0, 1, 2, 3, 12, 13, 30]
+    for (i in 0..arrivals.Len()) { q.Push(arrivals[i], Kind.Arrive(i + 1)) }
 
+    mut waiting: Array<I64> = []
+    mut busy: Bool = false
     mut served: I64 = 0
-    while (q.Len() > 0) {
-        match (q.Pop()) {
-            Some(e) => {
-                Console.Println("t=${e.Time} ${e.Name}")
-                // Handlers schedule follow-up events.
-                if (e.Name == "customer orders") { q.Push(e.Time + 4, "order delivered") }
-                if (e.Name == "order delivered") {
-                    served = served + 1
-                    if (served < 2) { q.Push(e.Time + 1, "customer arrives") }
-                }
-                if (e.Name == "customer arrives" && e.Time > 1) { q.Push(e.Time + 1, "customer orders") }
-            },
-            None => {},
-        }
-    }
-    Console.Println("served ${served} customers")
+    mut longest: I64 = 0
+    let arrivedAt: Array<I64> = arrivals
 
-    // A heap sorts: push shuffled numbers, pop them in order.
-    mut nums: Queue = Queue.New()
-    for (x in [42, 7, 19, 3, 88, 1, 56, 23]) { nums.Push(x, "n${x}") }
-    mut out: Array<String> = []
-    while (nums.Len() > 0) {
-        match (nums.Pop()) {
-            Some(e) => out.Push(e.Name),
-            None => {},
+    while (q.Len() > 0) {
+        let ev: Event = q.Pop()
+        match (ev.What) {
+            Kind.Arrive(id) => {
+                if (busy) {
+                    waiting.Push(id)
+                    Console.Println("${clock(ev.At)}  customer ${id} arrives and queues (${waiting.Len()} waiting)")
+                } else {
+                    busy = true
+                    Console.Println("${clock(ev.At)}  customer ${id} arrives, order starts at once")
+                    q.Push(ev.At + 4, Kind.FinishOrder(id))
+                }
+            },
+            Kind.FinishOrder(id) => {
+                served = served + 1
+                let waited: I64 = ev.At - 4 - arrivedAt[id - 1]
+                if (waited > longest) { longest = waited }
+                Console.Println("${clock(ev.At)}  customer ${id} leaves with a coffee (waited ${waited} min)")
+                if (waiting.Len() > 0) {
+                    let nextId: I64 = waiting.RemoveAt(0)
+                    q.Push(ev.At + 4, Kind.FinishOrder(nextId))
+                } else {
+                    busy = false
+                }
+            },
         }
     }
-    Console.Println(out.Join(" "))
+    Console.Println("served ${served} customers, longest wait ${longest} min")
 }

@@ -1,0 +1,19 @@
+DRL-18  Cordless drill    6 x   89.99 =    539.94
+SAW-HND Hand saw         14 x   14.50 =    203.00
+BLT-M8  M8 bolt         500 x    0.12 =     60.00
+NUT-M8  M8 nut           80 x    0.08 =      6.40
+total stock value: 809.34
+
+ship 20 drills: OutOfRange: only 6 of DRL-18 in stock, 20 requested
+ship 2 drills: ok, 4 left
+receive 300 nuts: ok, 380 left
+receive -1 saws: Invalid: quantity must be positive, not -1
+ship 1 hammer: NotFound: unknown SKU HMR-01
+
+low stock: Cordless drill (4 <= 5)
+
+DRL-18  Cordless drill    4 x   89.99 =    359.96
+SAW-HND Hand saw         14 x   14.50 =    203.00
+BLT-M8  M8 bolt         500 x    0.12 =     60.00
+NUT-M8  M8 nut          380 x    0.08 =     30.40
+total stock value: 653.36

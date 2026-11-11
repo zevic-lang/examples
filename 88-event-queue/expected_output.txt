@@ -1,11 +1,15 @@
-t=1 customer arrives
-t=3 customer orders
-t=3 barista notices
-t=5 coffee machine ready
-t=7 order delivered
-t=8 customer arrives
-t=9 shop closes
-t=9 customer orders
-t=13 order delivered
-served 2 customers
-n1 n3 n7 n19 n23 n42 n56 n88
+08:00  customer 1 arrives, order starts at once
+08:01  customer 2 arrives and queues (1 waiting)
+08:02  customer 3 arrives and queues (2 waiting)
+08:03  customer 4 arrives and queues (3 waiting)
+08:04  customer 1 leaves with a coffee (waited 0 min)
+08:08  customer 2 leaves with a coffee (waited 3 min)
+08:12  customer 5 arrives and queues (2 waiting)
+08:12  customer 3 leaves with a coffee (waited 6 min)
+08:13  customer 6 arrives and queues (2 waiting)
+08:16  customer 4 leaves with a coffee (waited 9 min)
+08:20  customer 5 leaves with a coffee (waited 4 min)
+08:24  customer 6 leaves with a coffee (waited 7 min)
+08:30  customer 7 arrives, order starts at once
+08:34  customer 7 leaves with a coffee (waited 0 min)
+served 7 customers, longest wait 9 min

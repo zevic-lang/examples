@@ -1,0 +1,109 @@
+// A warehouse inventory: stock levels per SKU, receiving and shipping goods, low-stock alerts and a report
+// sorted by value. Money is kept in cents (I64) to avoid floating-point rounding.
+// Shows: Map of structs, Result for rejected operations, sorting with a key, and aligned report output.
+// Library: Zevic.Console, Zevic.Text, Zevic.Error.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+struct Item {
+    Sku: String
+    Name: String
+    Qty: I64
+    PriceCents: I64
+    ReorderAt: I64
+
+    fn Init(sku: String, name: String, qty: I64, priceCents: I64, reorderAt: I64) {
+        this.Sku = sku
+        this.Name = name
+        this.Qty = qty
+        this.PriceCents = priceCents
+        this.ReorderAt = reorderAt
+    }
+}
+
+fn money(cents: I64) -> String {
+    let c: I64 = cents % 100
+    "${cents / 100}.${if (c < 10) { "0" } else { "" }}${c}"
+}
+
+class Inventory {
+    items: Map<String, Item> = Map.New()
+
+    mut fn Add(item: Item) {
+        this.items.Set(item.Sku, item)
+    }
+
+    mut fn Receive(sku: String, qty: I64) -> Result<I64, Error> {
+        if (qty <= 0) { return Err(Error.New(ErrorKind.Invalid, "quantity must be positive, not ${qty}")) }
+        match (this.items.Get(sku)) {
+            Some(it) => {
+                let updated: Item = Item.New(it.Sku, it.Name, it.Qty + qty, it.PriceCents, it.ReorderAt)
+                this.items.Set(sku, updated)
+                Ok(updated.Qty)
+            },
+            None => Err(Error.New(ErrorKind.NotFound, "unknown SKU ${sku}")),
+        }
+    }
+
+    mut fn Ship(sku: String, qty: I64) -> Result<I64, Error> {
+        if (qty <= 0) { return Err(Error.New(ErrorKind.Invalid, "quantity must be positive, not ${qty}")) }
+        match (this.items.Get(sku)) {
+            Some(it) => {
+                if (it.Qty < qty) {
+                    return Err(Error.New(ErrorKind.OutOfRange, "only ${it.Qty} of ${sku} in stock, ${qty} requested"))
+                }
+                let updated: Item = Item.New(it.Sku, it.Name, it.Qty - qty, it.PriceCents, it.ReorderAt)
+                this.items.Set(sku, updated)
+                Ok(updated.Qty)
+            },
+            None => Err(Error.New(ErrorKind.NotFound, "unknown SKU ${sku}")),
+        }
+    }
+
+    fn Low() -> Array<Item> {
+        this.items.Values().Filter((i: Item) => i.Qty <= i.ReorderAt).SortedBy((a: Item, b: Item) => if (a.Sku < b.Sku) { -1 } else if (a.Sku > b.Sku) { 1 } else { 0 })
+    }
+
+    fn Report() {
+        let all: Array<Item> = this.items.Values().SortedBy((a: Item, b: Item) => if (a.Qty * a.PriceCents > b.Qty * b.PriceCents) { -1 } else if (a.Qty * a.PriceCents < b.Qty * b.PriceCents) { 1 } else { 0 })
+        mut total: I64 = 0
+        for (i in all) {
+            let value: I64 = i.Qty * i.PriceCents
+            total = total + value
+            Console.Println("${Text.PadRight(i.Sku, 8, ' ')}${Text.PadRight(i.Name, 14, ' ')}${Text.PadLeft("${i.Qty}", 5, ' ')} x ${Text.PadLeft(money(i.PriceCents), 7, ' ')} = ${Text.PadLeft(money(value), 9, ' ')}")
+        }
+        Console.Println("total stock value: ${money(total)}")
+    }
+}
+
+fn show(label: String, r: Result<I64, Error>) {
+    match (r) {
+        Ok(left) => Console.Println("${label}: ok, ${left} left"),
+        Err(e) => Console.Println("${label}: ${e.Kind().ToString()}: ${e.Message()}"),
+    }
+}
+
+fn Main() {
+    mut inv: Inventory = Inventory.New()
+    inv.Add(Item.New("BLT-M8", "M8 bolt", 500, 12, 100))
+    inv.Add(Item.New("NUT-M8", "M8 nut", 80, 8, 100))
+    inv.Add(Item.New("DRL-18", "Cordless drill", 6, 8999, 5))
+    inv.Add(Item.New("SAW-HND", "Hand saw", 14, 1450, 4))
+
+    inv.Report()
+    Console.Println("")
+    show("ship 20 drills", inv.Ship("DRL-18", 20))
+    show("ship 2 drills", inv.Ship("DRL-18", 2))
+    show("receive 300 nuts", inv.Receive("NUT-M8", 300))
+    show("receive -1 saws", inv.Receive("SAW-HND", -1))
+    show("ship 1 hammer", inv.Ship("HMR-01", 1))
+    Console.Println("")
+    for (i in inv.Low()) {
+        Console.Println("low stock: ${i.Name} (${i.Qty} <= ${i.ReorderAt})")
+    }
+    Console.Println("")
+    inv.Report()
+}
