@@ -1,0 +1,71 @@
+// A JSON tool: read JSON from standard input (input.txt), check it, print it pretty and minified, then pull
+// a few values out with paths. A syntax error is reported with its position.
+// Shows: Json.Parse, Json.Pretty and Json.Stringify, walking a Json.Value with Get/At and the As* accessors.
+// Library: Zevic.Console, Zevic.Json.
+
+module Main
+
+import Zevic.Console
+import Zevic.Json
+import Zevic.Text
+
+// Follow a path such as "servers.1.host": names pick object keys, numbers pick array items.
+fn lookup(root: Json.Value, path: String) -> Option<Json.Value> {
+    mut cur: Json.Value = root
+    for (part in Text.Split(path, ".")) {
+        match (part.ToI64()) {
+            Ok(i) => {
+                match (cur.At(i)) {
+                    Some(next) => { cur = next },
+                    None => { return None },
+                }
+            },
+            Err(_) => {
+                match (cur.Get(part)) {
+                    Some(next) => { cur = next },
+                    None => { return None },
+                }
+            },
+        }
+    }
+    Some(cur)
+}
+
+fn Main() {
+    let text: String = Console.ReadAll()
+    let doc: Json.Value = match (Json.Parse(text)) {
+        Ok(v) => v,
+        Err(e) => {
+            Console.Println("invalid JSON: ${e.Message()}")
+            return
+        },
+    }
+
+    Console.Println("--- pretty")
+    Console.Println(Json.Pretty(doc))
+    Console.Println("--- minified")
+    Console.Println(Json.Stringify(doc))
+
+    Console.Println("--- lookups")
+    for (path in ["name", "version", "servers.1.host", "servers.0.ports.2", "options.debug", "options.missing", "servers.9"]) {
+        match (lookup(doc, path)) {
+            Some(v) => Console.Println("${path} = ${Json.Stringify(v)}"),
+            None => Console.Println("${path} is not there"),
+        }
+    }
+    let ports: Array<Json.Value> = lookup(doc, "servers.0.ports").Unwrap().AsArray().Unwrap()
+    mut total: I64 = 0
+    for (p in ports) {
+        total += p.AsI64().Unwrap()
+    }
+    Console.Println("sum of the ports of the first server: ${total}")
+
+    // Text that is not JSON.
+    Console.Println("--- errors")
+    for (bad in ["{\"a\": }", "[1, 2", "{'a': 1}", "tru", "[1,]", ""]) {
+        match (Json.Parse(bad)) {
+            Ok(_v) => Console.Println("${bad} -> parsed?"),
+            Err(e) => Console.Println("${bad} -> ${e.Message()}"),
+        }
+    }
+}

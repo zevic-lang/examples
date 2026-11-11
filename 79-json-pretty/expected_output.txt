@@ -1,0 +1,45 @@
+--- pretty
+{
+  "name": "zevic-demo",
+  "version": "0.4.1",
+  "servers": [
+    {
+      "host": "alpha.example",
+      "ports": [
+        80,
+        443,
+        8080
+      ],
+      "tls": true
+    },
+    {
+      "host": "beta.example",
+      "ports": [],
+      "tls": false
+    }
+  ],
+  "options": {
+    "debug": false,
+    "ratio": 0.75,
+    "note": null,
+    "text": "tab\there \"quoted\" é"
+  }
+}
+--- minified
+{"name":"zevic-demo","version":"0.4.1","servers":[{"host":"alpha.example","ports":[80,443,8080],"tls":true},{"host":"beta.example","ports":[],"tls":false}],"options":{"debug":false,"ratio":0.75,"note":null,"text":"tab\there \"quoted\" é"}}
+--- lookups
+name = "zevic-demo"
+version = "0.4.1"
+servers.1.host = "beta.example"
+servers.0.ports.2 = 8080
+options.debug = false
+options.missing is not there
+servers.9 is not there
+sum of the ports of the first server: 8603
+--- errors
+{"a": } -> JSON: unexpected `}`, expected a value at line 1, column 7
+[1, 2 -> JSON: unexpected end of text, expected `,` or `]` at line 1, column 6
+{'a': 1} -> JSON: unexpected `'`, expected a string as the key at line 1, column 2
+tru -> JSON: unexpected `t` at line 1, column 1
+[1,] -> JSON: unexpected `]`, expected a value at line 1, column 4
+ -> JSON: unexpected end of text, expected a value at line 1, column 1

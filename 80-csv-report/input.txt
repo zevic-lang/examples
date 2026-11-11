@@ -1,0 +1,9 @@
+region,item,qty,price
+north,"Widget, large",3,19.99
+south,Gadget,10,249.50
+north,Gizmo,1,1234.05
+east,Doohickey,abc,5.00
+south,"Thing ""Pro""",2,1000.00
+west,Widget,100,0.99
+east,Gadget,4,249.5
+north,Gadget,7,249.50

@@ -1,0 +1,56 @@
+// A `hexdump -C` style dump: the offset, sixteen bytes in hex (split in two groups of eight) and the
+// printable characters on the right. It dumps a fixed byte array so the output is the same everywhere.
+// Shows: Bytes, Text.Format with %08x and %02x, and padding the last line.
+// Library: Zevic.Bytes, Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Text
+
+// One line of the dump: `offset` is where `chunk` starts (at most 16 bytes).
+fn line(offset: I64, chunk: Array<U8>) -> String {
+    mut hex: StringBuilder = StringBuilder.New()
+    mut ascii: StringBuilder = StringBuilder.New()
+    for (i in 0..16) {
+        if (i == 8) { hex.Append(" ") }
+        if (i < chunk.Len()) {
+            hex.Append(Text.Format("%02x ", chunk[i].ToI32()))
+            let b: U8 = chunk[i]
+            // Printable ASCII is shown as it is, everything else as a dot.
+            ascii.Append(if (b >= 32 && b < 127) { Bytes.ToStringLossy([b]) } else { "." })
+        } else {
+            hex.Append("   ")
+        }
+    }
+    Text.Format("%08x  %s |%s|", offset, hex.ToString(), ascii.ToString())
+}
+
+fn dump(data: Array<U8>) {
+    mut offset: I64 = 0
+    while (offset < data.Len()) {
+        let end: I64 = if (offset + 16 < data.Len()) { offset + 16 } else { data.Len() }
+        Console.Println(line(offset, data.Slice(offset, end)))
+        offset += 16
+    }
+    Console.Println(Text.Format("%08x", data.Len()))
+}
+
+fn Main() {
+    Console.Println("-- text, 45 bytes")
+    dump(Bytes.FromString("The quick brown fox jumps over the lazy dog.\n"))
+
+    Console.Println("-- every byte value from 0 to 40, and a short last line")
+    mut counting: Array<U8> = []
+    for (i in 0..41) {
+        counting.Push(i.ToU8Wrap())
+    }
+    dump(counting)
+
+    Console.Println("-- UTF-8: one character may take several bytes")
+    dump(Bytes.FromString("héllo, 日本語!"))
+
+    Console.Println("-- nothing")
+    dump([])
+}

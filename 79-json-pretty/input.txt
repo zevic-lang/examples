@@ -1,0 +1,1 @@
+{"name":"zevic-demo","version":"0.4.1","servers":[{"host":"alpha.example","ports":[80,443,8080],"tls":true},{"host":"beta.example","ports":[],"tls":false}],"options":{"debug":false,"ratio":0.75,"note":null,"text":"tab\there \"quoted\" é"}}

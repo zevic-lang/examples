@@ -1,0 +1,10 @@
+8 rows
+region      orders       revenue
+--------------------------------
+north            3      3,040.52
+south            2      4,495.00
+west             1         99.00
+--------------------------------
+total            6      7,634.52
+skipped line 5: Doohickey
+skipped line 8: Gadget

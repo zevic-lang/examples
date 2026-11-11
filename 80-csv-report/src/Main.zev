@@ -1,0 +1,87 @@
+// A sales report from CSV on standard input: parse (with quoted fields and embedded commas), group by region,
+// and print an aligned table with totals. Bad rows are reported, not fatal.
+// Shows: Csv.ParseRecords (rows as maps by header name), Map grouping, column alignment with PadLeft/PadRight.
+// Library: Zevic.Console, Zevic.Csv, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Csv
+import Zevic.Text
+
+struct Total {
+    Orders: I64
+    Cents: I64
+
+    fn Init(orders: I64, cents: I64) {
+        this.Orders = orders
+        this.Cents = cents
+    }
+}
+
+// Cents as "1,234.56": thousands separators are added by hand.
+fn money(cents: I64) -> String {
+    let whole: String = "${cents / 100}"
+    mut grouped: Array<String> = []
+    mut end: I64 = whole.Len()
+    while (end > 0) {
+        let start: I64 = if (end > 3) { end - 3 } else { 0 }
+        grouped.Push(whole.Slice(start, end))
+        end = start
+    }
+    let frac: String = Text.PadLeft("${cents % 100}", 2, '0')
+    "${grouped.Reversed().Join(",")}.${frac}"
+}
+
+// "12.50" -> 1250. Only plain decimals with at most two places are accepted.
+fn parseCents(text: String) -> Result<I64, Error> {
+    let parts: Array<String> = Text.Split(Text.Trim(text), ".")
+    if (parts.Len() > 2) { return Err(Error.New(ErrorKind.Invalid, "bad amount '${text}'")) }
+    let whole: I64 = parts[0].ToI64()?
+    if (parts.Len() == 1) { return Ok(whole * 100) }
+    if (parts[1].Len() != 2) { return Err(Error.New(ErrorKind.Invalid, "bad amount '${text}'")) }
+    let frac: I64 = parts[1].ToI64()?
+    Ok(whole * 100 + frac)
+}
+
+fn Main() {
+    let rows: Array<Map<String, String>> = match (Csv.ParseRecords(Console.ReadAll())) {
+        Ok(r) => r,
+        Err(e) => {
+            Console.Println("CSV error: ${e.Message()}")
+            return
+        },
+    }
+    Console.Println("${rows.Len()} rows")
+
+    mut byRegion: Map<String, Total> = Map.New()
+    mut all: Total = Total.New(0, 0)
+    mut skipped: Array<String> = []
+    for (i in 0..rows.Len()) {
+        let row: Map<String, String> = rows[i]
+        let qty: Result<I64, Error> = row.GetOr("qty", "").ToI64()
+        let price: Result<I64, Error> = parseCents(row.GetOr("price", ""))
+        if (qty.IsErr() || price.IsErr()) {
+            skipped.Push("line ${i + 2}: ${row.GetOr("item", "?")}")
+            continue
+        }
+        let cents: I64 = qty.Unwrap() * price.Unwrap()
+        let region: String = row.GetOr("region", "?")
+        let old: Total = byRegion.GetOr(region, Total.New(0, 0))
+        byRegion.Set(region, Total.New(old.Orders + 1, old.Cents + cents))
+        all = Total.New(all.Orders + 1, all.Cents + cents)
+    }
+
+    let header: String = "${Text.PadRight("region", 10, ' ')}${Text.PadLeft("orders", 8, ' ')}${Text.PadLeft("revenue", 14, ' ')}"
+    Console.Println(header)
+    Console.Println(Text.Repeat("-", header.Len()))
+    for (region in byRegion.Keys().Sorted()) {
+        let t: Total = byRegion[region]
+        Console.Println("${Text.PadRight(region, 10, ' ')}${Text.PadLeft("${t.Orders}", 8, ' ')}${Text.PadLeft(money(t.Cents), 14, ' ')}")
+    }
+    Console.Println(Text.Repeat("-", header.Len()))
+    Console.Println("${Text.PadRight("total", 10, ' ')}${Text.PadLeft("${all.Orders}", 8, ' ')}${Text.PadLeft(money(all.Cents), 14, ' ')}")
+    for (s in skipped) {
+        Console.Println("skipped ${s}")
+    }
+}
