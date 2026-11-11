@@ -1,0 +1,18 @@
+(no section)
+  title = <Demo application>
+[server]
+  debug = <YES>
+  host = <example.org>
+  motd = <Hello, "world" ; not a comment>
+  port = <8080>
+[paths]
+  data = </var/lib/demo>
+  empty = <>
+port + 1 = 8081
+debug = true, verbose = true
+missing key: nobody, missing section: true
+port as a bool falls back: false
+[open -> line 1: missing ] in the section name
+no equals sign -> line 1: expected key = value
+= value -> line 1: missing key
+[] -> line 1: empty section name

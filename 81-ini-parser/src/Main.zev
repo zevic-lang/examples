@@ -1,0 +1,143 @@
+// An INI file parser: [sections], key = value pairs, comments (; and #), quoted values and typed accessors.
+// Errors carry the line number. A parsed file is a Map of sections, each a Map of keys.
+// Shows: line by line parsing with Result and `?`, nested Maps, and small typed getters with defaults.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+class Ini {
+    sections: Map<String, Map<String, String>> = Map.New()
+    order: Array<String> = []
+
+    fn Sections() -> Array<String> { this.order }
+
+    fn Keys(section: String) -> Array<String> {
+        match (this.sections.Get(section)) {
+            Some(s) => s.Keys().Sorted(),
+            None => [],
+        }
+    }
+
+    fn Get(section: String, key: String) -> Option<String> {
+        match (this.sections.Get(section)) {
+            Some(s) => s.Get(key),
+            None => None,
+        }
+    }
+
+    fn GetOr(section: String, key: String, fallback: String) -> String {
+        this.Get(section, key).UnwrapOr(fallback)
+    }
+
+    fn GetInt(section: String, key: String, fallback: I64) -> I64 {
+        match (this.Get(section, key)) {
+            Some(text) => text.ToI64().UnwrapOr(fallback),
+            None => fallback,
+        }
+    }
+
+    // true/false, yes/no, on/off, 1/0 in any case.
+    fn GetBool(section: String, key: String, fallback: Bool) -> Bool {
+        match (this.Get(section, key)) {
+            Some(text) => {
+                let t: String = Text.ToLower(text)
+                if (t == "true" || t == "yes" || t == "on" || t == "1") { true } else if (t == "false" || t == "no" || t == "off" || t == "0") { false } else { fallback }
+            },
+            None => fallback,
+        }
+    }
+
+    mut fn set(section: String, key: String, value: String) {
+        if (!this.sections.Contains(section)) {
+            this.sections.Set(section, Map.New())
+            this.order.Push(section)
+        }
+        mut s: Map<String, String> = this.sections[section]
+        s.Set(key, value)
+    }
+}
+
+fn fail(line: I64, message: String) -> Error {
+    Error.New(ErrorKind.Invalid, "line ${line}: ${message}")
+}
+
+// "quoted value" -> quoted value (with \" and \\ escapes); anything else is trimmed text.
+fn value(raw: String) -> String {
+    let t: String = Text.Trim(raw)
+    if (t.Len() >= 2 && Text.StartsWith(t, "\"") && Text.EndsWith(t, "\"")) {
+        return Text.Replace(Text.Replace(t.Slice(1, t.Len() - 1), "\\\"", "\""), "\\\\", "\\")
+    }
+    // An unquoted value ends at an inline comment.
+    match (Text.IndexOf(t, " ;")) {
+        Some(i) => Text.Trim(t.Slice(0, i)),
+        None => t,
+    }
+}
+
+fn Parse(source: String) -> Result<Ini, Error> {
+    mut ini: Ini = Ini.New()
+    mut section: String = ""
+    let lines: Array<String> = Text.Lines(source)
+    for (i in 0..lines.Len()) {
+        let n: I64 = i + 1
+        let line: String = Text.Trim(lines[i])
+        if (line.Len() == 0 || Text.StartsWith(line, ";") || Text.StartsWith(line, "#")) {
+            continue
+        }
+        if (Text.StartsWith(line, "[")) {
+            if (!Text.EndsWith(line, "]")) { return Err(fail(n, "missing ] in the section name")) }
+            section = Text.Trim(line.Slice(1, line.Len() - 1))
+            if (section.Len() == 0) { return Err(fail(n, "empty section name")) }
+            continue
+        }
+        match (Text.IndexOf(line, "=")) {
+            Some(eq) => {
+                let key: String = Text.Trim(line.Slice(0, eq))
+                if (key.Len() == 0) { return Err(fail(n, "missing key")) }
+                ini.set(section, key, value(line.Slice(eq + 1, line.Len())))
+            },
+            None => return Err(fail(n, "expected key = value")),
+        }
+    }
+    Ok(ini)
+}
+
+fn Main() {
+    let source: String = """
+; global settings come before the first section
+title = Demo application
+
+[server]
+host = example.org
+port = 8080       ; inline comment
+debug = YES
+motd = "Hello, \"world\" ; not a comment"
+
+# another comment style
+[paths]
+data = /var/lib/demo
+empty =
+"""
+    let ini: Ini = Parse(source).Unwrap()
+    for (s in ini.Sections()) {
+        let shown: String = if (s == "") { "(no section)" } else { "[${s}]" }
+        Console.Println(shown)
+        for (k in ini.Keys(s)) {
+            Console.Println("  ${k} = <${ini.Get(s, k).Unwrap()}>")
+        }
+    }
+    Console.Println("port + 1 = ${ini.GetInt("server", "port", 0) + 1}")
+    Console.Println("debug = ${ini.GetBool("server", "debug", false)}, verbose = ${ini.GetBool("server", "verbose", true)}")
+    Console.Println("missing key: ${ini.GetOr("server", "user", "nobody")}, missing section: ${ini.Get("db", "host").IsNone()}")
+    Console.Println("port as a bool falls back: ${ini.GetBool("server", "port", false)}")
+
+    for (bad in ["[open", "no equals sign", "= value", "[]"]) {
+        match (Parse(bad)) {
+            Ok(_i) => Console.Println("${bad} -> parsed?"),
+            Err(e) => Console.Println("${bad} -> ${e.Message()}"),
+        }
+    }
+}

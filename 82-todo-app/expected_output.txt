@@ -1,0 +1,32 @@
+> list
+nothing to do
+> add buy milk
+added #1
+> add write "quoted" report
+added #2
+> add call Ann
+added #3
+> list
+1. [ ] buy milk
+2. [ ] write "quoted" report
+3. [ ] call Ann
+> done 2
+done #2
+> done 9
+error: no item #9
+> done two
+error: 'two' is not a number
+> remove 3
+remove #3
+> dance
+error: unknown command 'dance'
+> add
+error: add needs a title
+> list
+1. [ ] buy milk
+2. [x] write "quoted" report
+> clear
+removed 1 finished item(s)
+> list
+1. [ ] buy milk
+file is JSON: true

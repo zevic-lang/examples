@@ -1,0 +1,119 @@
+// A to-do list that keeps its data in a file between runs. The commands (add, done, list, remove, clear) are a
+// fixed script here, and each one loads the file, changes it and saves it again, just like separate runs of a
+// command line tool would. The file is a JSON array in a temporary directory.
+// Shows: Fs read/write, Json for the storage format, Result and `?` for error handling.
+// Library: Zevic.Console, Zevic.Fs, Zevic.Json, Zevic.Path, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Fs
+import Zevic.Json
+import Zevic.Path
+import Zevic.Text
+
+struct Todo {
+    Title: String
+    Done: Bool
+
+    fn Init(title: String, done: Bool) {
+        this.Title = title
+        this.Done = done
+    }
+}
+
+fn load(file: String) -> Result<Array<Todo>, Error> {
+    // A missing file is an empty list.
+    if (!Fs.Exists(file)) { return Ok([]) }
+    let doc: Json.Value = Json.Parse(Fs.ReadAll(file)?)?
+    mut todos: Array<Todo> = []
+    for (item in doc.AsArray().UnwrapOr([])) {
+        let title: String = match (item.Get("title")) {
+            Some(v) => v.AsString().UnwrapOr(""),
+            None => "",
+        }
+        let done: Bool = match (item.Get("done")) {
+            Some(v) => v.AsBool().UnwrapOr(false),
+            None => false,
+        }
+        todos.Push(Todo.New(title, done))
+    }
+    Ok(todos)
+}
+
+fn save(file: String, todos: Array<Todo>) -> Result<Unit, Error> {
+    let items: Array<String> = todos.Map((t: Todo) => "{\"title\":${Json.Quote(t.Title)},\"done\":${t.Done}}")
+    Fs.WriteAll(file, "[${items.Join(",")}]")
+}
+
+// Run one command; the result is what the command prints.
+fn command(file: String, line: String) -> Result<String, Error> {
+    let words: Array<String> = Text.Words(line)
+    let name: String = words[0]
+    let rest: String = Text.Trim(line.Slice(name.Len(), line.Len()))
+    mut todos: Array<Todo> = load(file)?
+    if (name == "add") {
+        if (rest.Len() == 0) { return Err(Error.New(ErrorKind.Invalid, "add needs a title")) }
+        todos.Push(Todo.New(rest, false))
+        save(file, todos)?
+        return Ok("added #${todos.Len()}")
+    }
+    if (name == "list") {
+        if (todos.Len() == 0) { return Ok("nothing to do") }
+        mut out: Array<String> = []
+        for (i in 0..todos.Len()) {
+            out.Push("${i + 1}. [${if (todos[i].Done) { "x" } else { " " }}] ${todos[i].Title}")
+        }
+        return Ok(out.Join("\n"))
+    }
+    if (name == "done" || name == "remove") {
+        let n: I64 = match (rest.ToI64()) {
+            Ok(v) => v,
+            Err(_) => return Err(Error.New(ErrorKind.Invalid, "'${rest}' is not a number")),
+        }
+        if (n < 1 || n > todos.Len()) { return Err(Error.New(ErrorKind.NotFound, "no item #${n}")) }
+        if (name == "done") {
+            todos[n - 1] = Todo.New(todos[n - 1].Title, true)
+        } else {
+            let _gone: Todo = todos.RemoveAt(n - 1)
+        }
+        save(file, todos)?
+        return Ok("${name} #${n}")
+    }
+    if (name == "clear") {
+        // Keep only the unfinished items.
+        let open: Array<Todo> = todos.Filter((t: Todo) => !t.Done)
+        save(file, open)?
+        return Ok("removed ${todos.Len() - open.Len()} finished item(s)")
+    }
+    Err(Error.New(ErrorKind.Invalid, "unknown command '${name}'"))
+}
+
+fn Main() {
+    let dir: String = Fs.MakeTempDir("todo").Unwrap()
+    let file: String = Path.Join(dir, "todo.json")
+    let script: Array<String> = [
+        "list",
+        "add buy milk",
+        "add write \"quoted\" report",
+        "add call Ann",
+        "list",
+        "done 2",
+        "done 9",
+        "done two",
+        "remove 3",
+        "dance",
+        "add",
+        "list",
+        "clear",
+        "list",
+    ]
+    for (line in script) {
+        match (command(file, line)) {
+            Ok(text) => Console.Println("> ${line}\n${text}"),
+            Err(e) => Console.Println("> ${line}\nerror: ${e.Message()}"),
+        }
+    }
+    Console.Println("file is JSON: ${Json.Parse(Fs.ReadAll(file).Unwrap()).IsOk()}")
+    Fs.RemoveAll(dir).Unwrap()
+}
