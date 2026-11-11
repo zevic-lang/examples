@@ -1,0 +1,10 @@
+peek: 1, size 7
+ascending: 1 2 3 5 7 8 9
+max first: 8 5 3 1
+pop on empty: true
+  9 backup
+  9 fix outage
+  5 deploy
+  2 answer mail
+  2 write report
+apple, banana, cherry, fig, pear

@@ -1,0 +1,11 @@
+after a, b, c: [a b c]
+get a: 1
+after get a: [b c a]
+put d dropped: b
+after put d: [c a d]
+get b: true (it was dropped)
+update c dropped nothing: true
+after update c: [a d c]
+c is now 30
+cycling 4 keys, capacity 3: 0 hits, 20 misses
+cycling 4 keys, capacity 4: 16 hits, 4 misses

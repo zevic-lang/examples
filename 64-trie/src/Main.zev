@@ -1,0 +1,98 @@
+// A trie (prefix tree): store words, test for a word or a prefix, list all words with a prefix.
+// Shows: a recursive class, Map<String, Node> children, and walking a tree with recursion.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+class Node {
+    Children: Map<String, Node> = Map.New()
+    IsWord: Bool = false
+}
+
+class Trie {
+    root: Node = Node.New()
+    count: I64 = 0
+
+    fn Len() -> I64 { this.count }
+
+    // Insert a word; false when it was already there.
+    mut fn Insert(word: String) -> Bool {
+        mut node: Node = this.root
+        for (c in Text.ToChars(word)) {
+            let key: String = "${c}"
+            match (node.Children.Get(key)) {
+                Some(next) => { node = next },
+                None => {
+                    let fresh: Node = Node.New()
+                    node.Children.Set(key, fresh)
+                    node = fresh
+                },
+            }
+        }
+        if (node.IsWord) { return false }
+        node.IsWord = true
+        this.count += 1
+        true
+    }
+
+    // The node reached by following `prefix`, if there is one.
+    fn find(prefix: String) -> Option<Node> {
+        mut node: Node = this.root
+        for (c in Text.ToChars(prefix)) {
+            match (node.Children.Get("${c}")) {
+                Some(next) => { node = next },
+                None => { return None },
+            }
+        }
+        Some(node)
+    }
+
+    fn Contains(word: String) -> Bool {
+        match (this.find(word)) {
+            Some(n) => n.IsWord,
+            None => false,
+        }
+    }
+
+    fn HasPrefix(prefix: String) -> Bool { this.find(prefix).IsSome() }
+
+    // All words that start with `prefix`, in alphabetical order.
+    fn WithPrefix(prefix: String) -> Array<String> {
+        mut out: Array<String> = []
+        match (this.find(prefix)) {
+            Some(n) => collect(n, prefix, out),
+            None => {},
+        }
+        out
+    }
+}
+
+// Depth first walk, visiting the children in key order so the result is sorted.
+fn collect(node: Node, path: String, mut out: Array<String>) {
+    if (node.IsWord) { out.Push(path) }
+    for (key in node.Children.Keys().Sorted()) {
+        collect(node.Children[key], path + key, out)
+    }
+}
+
+fn Main() {
+    mut t: Trie = Trie.New()
+    for (w in ["car", "card", "care", "careful", "cat", "dog", "do", "dot", "zebra"]) {
+        t.Insert(w)
+    }
+    Console.Println("words: ${t.Len()}, inserting car again adds it: ${t.Insert("car")}")
+    Console.Println("contains car: ${t.Contains("car")}, ca: ${t.Contains("ca")}, cart: ${t.Contains("cart")}")
+    Console.Println("prefix ca: ${t.HasPrefix("ca")}, prefix cx: ${t.HasPrefix("cx")}")
+    Console.Println("car*: ${t.WithPrefix("car").Join(", ")}")
+    Console.Println("do*: ${t.WithPrefix("do").Join(", ")}")
+    Console.Println("all: ${t.WithPrefix("").Join(" ")}")
+    Console.Println("none: ${t.WithPrefix("x").Len()}")
+
+    // Characters, not bytes: non-ASCII words work.
+    t.Insert("日本")
+    t.Insert("日本語")
+    Console.Println("日*: ${t.WithPrefix("日").Join(", ")}")
+}

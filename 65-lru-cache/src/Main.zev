@@ -1,0 +1,118 @@
+// An LRU cache: it keeps the most recently used entries and drops the least recently used one when full.
+// Shows: a generic class with two keys' worth of state (a Map for values, an Array for the order), `mut` methods
+// and a hit/miss counter. The order array makes a lookup O(n); the capacity is small, so that is fine here.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class LruCache<V> {
+    capacity: I64
+    values: Map<String, V> = Map.New()
+    order: Array<String> = []
+    hits: I64 = 0
+    misses: I64 = 0
+
+    fn Init(capacity: I64) {
+        this.capacity = capacity
+    }
+
+    fn Len() -> I64 { this.values.Len() }
+
+    // Oldest first.
+    fn Keys() -> Array<String> { this.order }
+
+    fn Hits() -> I64 { this.hits }
+
+    fn Misses() -> I64 { this.misses }
+
+    // Move `key` to the end of the order (most recent).
+    mut fn touch(key: String) {
+        match (this.order.IndexWhere((k: String) => k == key)) {
+            Some(i) => {
+                let _old: String = this.order.RemoveAt(i)
+            },
+            None => {},
+        }
+        this.order.Push(key)
+    }
+
+    mut fn Get(key: String) -> Option<V> {
+        match (this.values.Get(key)) {
+            Some(v) => {
+                this.hits += 1
+                this.touch(key)
+                Some(v)
+            },
+            None => {
+                this.misses += 1
+                None
+            },
+        }
+    }
+
+    // Returns the key that had to be dropped to make room, if any.
+    mut fn Put(key: String, value: V) -> Option<String> {
+        mut dropped: Option<String> = None
+        if (!this.values.Contains(key) && this.values.Len() >= this.capacity) {
+            let oldest: String = this.order[0]
+            let _old: String = this.order.RemoveAt(0)
+            this.values.Remove(oldest)
+            dropped = Some(oldest)
+        }
+        this.values.Set(key, value)
+        this.touch(key)
+        dropped
+    }
+}
+
+fn Show(label: String, c: LruCache<I32>) {
+    Console.Println("${label}: [${c.Keys().Join(" ")}]")
+}
+
+fn Main() {
+    mut cache: LruCache<I32> = LruCache<I32>.New(3)
+    cache.Put("a", 1)
+    cache.Put("b", 2)
+    cache.Put("c", 3)
+    Show("after a, b, c", cache)
+
+    // Reading "a" makes it the most recent, so "b" is now the oldest.
+    Console.Println("get a: ${cache.Get("a").Unwrap()}")
+    Show("after get a", cache)
+
+    // A fourth key evicts the oldest one.
+    let dropped: Option<String> = cache.Put("d", 4)
+    Console.Println("put d dropped: ${dropped.Unwrap()}")
+    Show("after put d", cache)
+    Console.Println("get b: ${cache.Get("b").IsNone()} (it was dropped)")
+
+    // Updating a key that exists never evicts.
+    Console.Println("update c dropped nothing: ${cache.Put("c", 30).IsNone()}")
+    Show("after update c", cache)
+    Console.Println("c is now ${cache.Get("c").Unwrap()}")
+
+    // A small workload: cycling through 4 keys with room for 3 never hits (the classic worst case)...
+    mut cyc: LruCache<I32> = LruCache<I32>.New(3)
+    let keys: Array<String> = ["w", "x", "y", "z"]
+    for (round in 0..5) {
+        for (k in keys) {
+            if (cyc.Get(k).IsNone()) {
+                cyc.Put(k, 0)
+            }
+        }
+    }
+    Console.Println("cycling 4 keys, capacity 3: ${cyc.Hits()} hits, ${cyc.Misses()} misses")
+
+    // ...while a working set that fits is almost all hits.
+    mut fit: LruCache<I32> = LruCache<I32>.New(4)
+    for (round in 0..5) {
+        for (k in keys) {
+            if (fit.Get(k).IsNone()) {
+                fit.Put(k, 0)
+            }
+        }
+    }
+    Console.Println("cycling 4 keys, capacity 4: ${fit.Hits()} hits, ${fit.Misses()} misses")
+}

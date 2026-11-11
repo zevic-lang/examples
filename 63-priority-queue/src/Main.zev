@@ -1,0 +1,118 @@
+// A generic priority queue: a binary heap stored in an array, ordered by a function given by the caller.
+// Shows: a generic class holding a closure, `mut` methods, and the same queue used with several orderings.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class PriorityQueue<T> {
+    items: Array<T> = []
+    before: fn(T, T) -> Bool
+
+    // `before(a, b)` says that a must come out before b.
+    fn Init(before: fn(T, T) -> Bool) {
+        this.before = before
+    }
+
+    fn Len() -> I64 { this.items.Len() }
+
+    fn IsEmpty() -> Bool { this.items.Len() == 0 }
+
+    fn Peek() -> Option<T> {
+        if (this.items.Len() == 0) { None } else { Some(this.items[0]) }
+    }
+
+    mut fn Push(v: T) {
+        this.items.Push(v)
+        mut i: I64 = this.items.Len() - 1
+        // Move the new item up while it belongs before its parent.
+        while (i > 0) {
+            let parent: I64 = (i - 1) / 2
+            if (!this.before(this.items[i], this.items[parent])) { break }
+            this.items.Swap(i, parent)
+            i = parent
+        }
+    }
+
+    mut fn Pop() -> Option<T> {
+        let n: I64 = this.items.Len()
+        if (n == 0) { return None }
+        let top: T = this.items[0]
+        this.items.Swap(0, n - 1)
+        this.items.Pop()
+        // Move the new root down while a child belongs before it.
+        let size: I64 = this.items.Len()
+        mut i: I64 = 0
+        loop {
+            let left: I64 = 2 * i + 1
+            let right: I64 = left + 1
+            mut best: I64 = i
+            if (left < size && this.before(this.items[left], this.items[best])) { best = left }
+            if (right < size && this.before(this.items[right], this.items[best])) { best = right }
+            if (best == i) { break }
+            this.items.Swap(i, best)
+            i = best
+        }
+        Some(top)
+    }
+}
+
+struct Task {
+    Name: String
+    Priority: I32
+
+    fn Init(name: String, priority: I32) {
+        this.Name = name
+        this.Priority = priority
+    }
+}
+
+fn Main() {
+    // Smallest number first.
+    mut numbers: PriorityQueue<I32> = PriorityQueue<I32>.New((a: I32, b: I32) => a < b)
+    let input: Array<I32> = [5, 1, 8, 3, 9, 2, 7]
+    for (x in input) {
+        numbers.Push(x)
+    }
+    Console.Println("peek: ${numbers.Peek().Unwrap()}, size ${numbers.Len()}")
+    mut out: Array<String> = []
+    while (!numbers.IsEmpty()) {
+        out.Push("${numbers.Pop().Unwrap()}")
+    }
+    Console.Println("ascending: ${out.Join(" ")}")
+
+    // Largest first: only the comparison changes.
+    mut biggest: PriorityQueue<I32> = PriorityQueue<I32>.New((a: I32, b: I32) => a > b)
+    let few: Array<I32> = [5, 1, 8, 3]
+    for (x in few) {
+        biggest.Push(x)
+    }
+    Console.Println("max first: ${biggest.Pop().Unwrap()} ${biggest.Pop().Unwrap()} ${biggest.Pop().Unwrap()} ${biggest.Pop().Unwrap()}")
+    Console.Println("pop on empty: ${biggest.Pop().IsNone()}")
+
+    // Records: the highest priority first, and the task name breaks ties.
+    mut tasks: PriorityQueue<Task> = PriorityQueue<Task>.New((a: Task, b: Task) => {
+        if (a.Priority != b.Priority) { a.Priority > b.Priority } else { a.Name < b.Name }
+    })
+    tasks.Push(Task.New("write report", 2))
+    tasks.Push(Task.New("fix outage", 9))
+    tasks.Push(Task.New("answer mail", 2))
+    tasks.Push(Task.New("deploy", 5))
+    tasks.Push(Task.New("backup", 9))
+    while (!tasks.IsEmpty()) {
+        let t: Task = tasks.Pop().Unwrap()
+        Console.Println("  ${t.Priority} ${t.Name}")
+    }
+
+    // A heap sort in two lines: push everything, pop everything.
+    mut words: PriorityQueue<String> = PriorityQueue<String>.New((a: String, b: String) => a < b)
+    for (w in ["pear", "apple", "fig", "cherry", "banana"]) {
+        words.Push(w)
+    }
+    mut sorted: Array<String> = []
+    while (!words.IsEmpty()) {
+        sorted.Push(words.Pop().Unwrap())
+    }
+    Console.Println(sorted.Join(", "))
+}

@@ -1,0 +1,8 @@
+words: 9, inserting car again adds it: false
+contains car: true, ca: false, cart: false
+prefix ca: true, prefix cx: false
+car*: car, card, care, careful
+do*: do, dog, dot
+all: car card care careful cat do dog dot zebra
+none: 0
+日*: 日本, 日本語
