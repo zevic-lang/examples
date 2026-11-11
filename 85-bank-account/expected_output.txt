@@ -1,0 +1,9 @@
+open again: Other: ann already has an account
+transfer 2500 ann -> bob: ok
+transfer 9000 ann -> bob: OutOfRange: insufficient funds: balance 7500, requested 9000
+transfer 10 ann -> carol: NotFound: no account for carol
+transfer 10 ann -> ann: Invalid: cannot transfer to the same account
+transfer -5 ann -> bob: Invalid: a withdrawal must be positive, not -5
+balances: ann 7500, bob 2500, total 10000 (the total never changes)
+ann's history: deposit 10000; withdraw 2500
+bob's history: deposit 2500

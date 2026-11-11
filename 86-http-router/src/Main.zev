@@ -1,0 +1,126 @@
+// A tiny HTTP router without sockets: routes such as "GET /users/:id" are matched against a method and a
+// path, parameters are captured, and handlers return a status and a body. The routing logic can then be tested
+// with plain strings; hooking it up to Zevic.Http is one function (see example 36).
+// Shows: closures stored in an array, path parsing, captured parameters in a Map, and 404 / 405 handling.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+struct Response {
+    Status: I64
+    Body: String
+
+    fn Init(status: I64, body: String) {
+        this.Status = status
+        this.Body = body
+    }
+}
+
+struct Route {
+    Method: String
+    Parts: Array<String>
+    Handler: fn(Map<String, String>) -> Response
+
+    fn Init(method: String, pattern: String, handler: fn(Map<String, String>) -> Response) {
+        this.Method = method
+        this.Parts = segments(pattern)
+        this.Handler = handler
+    }
+}
+
+// "/users/42/" -> ["users", "42"]
+fn segments(path: String) -> Array<String> {
+    Text.Split(path, "/").Filter((s: String) => s.Len() > 0)
+}
+
+class Router {
+    routes: Array<Route> = []
+
+    mut fn Add(method: String, pattern: String, handler: fn(Map<String, String>) -> Response) {
+        this.routes.Push(Route.New(method, pattern, handler))
+    }
+
+    // Parameters if `route` matches `parts`: ":name" matches any one segment, everything else must be equal.
+    fn matches(route: Route, parts: Array<String>) -> Option<Map<String, String>> {
+        if (route.Parts.Len() != parts.Len()) { return None }
+        mut params: Map<String, String> = Map.New()
+        for (i in 0..parts.Len()) {
+            let want: String = route.Parts[i]
+            if (Text.StartsWith(want, ":")) {
+                params.Set(want.Slice(1, want.Len()), parts[i])
+            } else if (want != parts[i]) {
+                return None
+            }
+        }
+        Some(params)
+    }
+
+    fn Handle(method: String, target: String) -> Response {
+        // Split off the query string: "/search?q=zevic&page=2".
+        let (path, query): (String, String) = match (Text.IndexOf(target, "?")) {
+            Some(i) => (target.Slice(0, i), target.Slice(i + 1, target.Len())),
+            None => (target, ""),
+        }
+        let parts: Array<String> = segments(path)
+        mut pathKnown: Bool = false
+        for (route in this.routes) {
+            match (this.matches(route, parts)) {
+                Some(found) => {
+                    mut params: Map<String, String> = found
+                    pathKnown = true
+                    if (route.Method == method) {
+                        // Query parameters are added too (the path wins on a clash).
+                        for (pair in Text.Split(query, "&")) {
+                            match (Text.IndexOf(pair, "=")) {
+                                Some(eq) => {
+                                    let k: String = pair.Slice(0, eq)
+                                    if (!params.Contains(k)) { params.Set(k, pair.Slice(eq + 1, pair.Len())) }
+                                },
+                                None => {},
+                            }
+                        }
+                        return route.Handler(params)
+                    }
+                },
+                None => {},
+            }
+        }
+        if (pathKnown) { Response.New(405, "method not allowed") } else { Response.New(404, "not found") }
+    }
+}
+
+fn Main() {
+    mut users: Map<String, String> = Map<String, String>.FromPairs([("1", "Ann"), ("2", "Bob")])
+    mut r: Router = Router.New()
+    r.Add("GET", "/", (p: Map<String, String>) => Response.New(200, "welcome"))
+    r.Add("GET", "/users/:id", (p: Map<String, String>) => {
+        match (users.Get(p["id"])) {
+            Some(name) => Response.New(200, "user ${p["id"]} is ${name}"),
+            None => Response.New(404, "no user ${p["id"]}"),
+        }
+    })
+    r.Add("DELETE", "/users/:id", (p: Map<String, String>) => Response.New(204, ""))
+    r.Add("GET", "/users/:id/posts/:post", (p: Map<String, String>) => Response.New(200, "post ${p["post"]} of user ${p["id"]}"))
+    r.Add("GET", "/search", (p: Map<String, String>) => Response.New(200, "searching for '${p.GetOr("q", "")}' page ${p.GetOr("page", "1")}"))
+
+    let requests: Array<(String, String)> = [
+        ("GET", "/"),
+        ("GET", "/users/2"),
+        ("GET", "/users/2/"),
+        ("GET", "/users/9"),
+        ("DELETE", "/users/1"),
+        ("POST", "/users/1"),
+        ("GET", "/users/1/posts/77"),
+        ("GET", "/search?q=zevic&page=2"),
+        ("GET", "/search"),
+        ("GET", "/nothing/here"),
+    ]
+    for (req in requests) {
+        let (method, target): (String, String) = req
+        let res: Response = r.Handle(method, target)
+        Console.Println("${Text.PadRight(method, 7, ' ')}${Text.PadRight(target, 24, ' ')} ${res.Status} ${res.Body}")
+    }
+}

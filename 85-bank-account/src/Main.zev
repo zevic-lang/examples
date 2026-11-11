@@ -1,0 +1,113 @@
+// A bank account as a class, with errors as values. Every operation that can fail returns a Result whose error
+// has a kind (Invalid, NotFound, Other ...) and a message; the callers decide what to do. A transfer between two
+// accounts either happens completely or not at all.
+// Shows: classes with private state, `mut` methods, Result and `?`, ErrorKind, and an audit log.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class Account {
+    Owner: String
+    balance: I64 = 0
+    history: Array<String> = []
+
+    fn Init(owner: String) {
+        this.Owner = owner
+    }
+
+    fn Balance() -> I64 { this.balance }
+
+    fn History() -> Array<String> { this.history }
+
+    mut fn Deposit(cents: I64) -> Result<Unit, Error> {
+        if (cents <= 0) {
+            return Err(Error.New(ErrorKind.Invalid, "a deposit must be positive, not ${cents}"))
+        }
+        this.balance += cents
+        this.history.Push("deposit ${cents}")
+        Ok(())
+    }
+
+    mut fn Withdraw(cents: I64) -> Result<Unit, Error> {
+        if (cents <= 0) {
+            return Err(Error.New(ErrorKind.Invalid, "a withdrawal must be positive, not ${cents}"))
+        }
+        if (cents > this.balance) {
+            return Err(Error.New(ErrorKind.OutOfRange, "insufficient funds: balance ${this.balance}, requested ${cents}"))
+        }
+        this.balance -= cents
+        this.history.Push("withdraw ${cents}")
+        Ok(())
+    }
+}
+
+class Bank {
+    accounts: Map<String, Account> = Map.New()
+
+    mut fn Open(owner: String, opening: I64) -> Result<Account, Error> {
+        if (this.accounts.Contains(owner)) {
+            return Err(Error.New(ErrorKind.Other, "${owner} already has an account"))
+        }
+        mut account: Account = Account.New(owner)
+        if (opening > 0) {
+            account.Deposit(opening)?
+        }
+        this.accounts.Set(owner, account)
+        Ok(account)
+    }
+
+    fn Find(owner: String) -> Result<Account, Error> {
+        this.accounts.Get(owner).OkOr(Error.New(ErrorKind.NotFound, "no account for ${owner}"))
+    }
+
+    // Both accounts must exist and the money must be there before anything moves.
+    fn Transfer(from: String, to: String, cents: I64) -> Result<Unit, Error> {
+        mut source: Account = this.Find(from)?
+        mut target: Account = this.Find(to)?
+        if (from == to) {
+            return Err(Error.New(ErrorKind.Invalid, "cannot transfer to the same account"))
+        }
+        source.Withdraw(cents)?
+        // A deposit into an existing account of a positive amount cannot fail here.
+        target.Deposit(cents)?
+        Ok(())
+    }
+
+    fn Total() -> I64 {
+        mut sum: I64 = 0
+        for (name in this.accounts.Keys()) {
+            sum += this.accounts[name].Balance()
+        }
+        sum
+    }
+}
+
+// Run an operation and print its outcome.
+fn attempt(label: String, r: Result<Unit, Error>) {
+    match (r) {
+        Ok(_) => Console.Println("${label}: ok"),
+        Err(e) => Console.Println("${label}: ${e.Kind().ToString()}: ${e.Message()}"),
+    }
+}
+
+fn Main() {
+    mut bank: Bank = Bank.New()
+    let ann: Account = bank.Open("ann", 10000).Unwrap()
+    let bob: Account = bank.Open("bob", 0).Unwrap()
+    match (bank.Open("ann", 5)) {
+        Ok(_a) => Console.Println("opened twice?"),
+        Err(e) => Console.Println("open again: ${e.Kind().ToString()}: ${e.Message()}"),
+    }
+
+    attempt("transfer 2500 ann -> bob", bank.Transfer("ann", "bob", 2500))
+    attempt("transfer 9000 ann -> bob", bank.Transfer("ann", "bob", 9000))
+    attempt("transfer 10 ann -> carol", bank.Transfer("ann", "carol", 10))
+    attempt("transfer 10 ann -> ann", bank.Transfer("ann", "ann", 10))
+    attempt("transfer -5 ann -> bob", bank.Transfer("ann", "bob", -5))
+    Console.Println("balances: ann ${ann.Balance()}, bob ${bob.Balance()}, total ${bank.Total()} (the total never changes)")
+
+    Console.Println("ann's history: ${ann.History().Join("; ")}")
+    Console.Println("bob's history: ${bob.History().Join("; ")}")
+}

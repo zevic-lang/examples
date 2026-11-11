@@ -1,0 +1,10 @@
+GET    /                        200 welcome
+GET    /users/2                 200 user 2 is Bob
+GET    /users/2/                200 user 2 is Bob
+GET    /users/9                 404 no user 9
+DELETE /users/1                 204 
+POST   /users/1                 405 method not allowed
+GET    /users/1/posts/77        200 post 77 of user 1
+GET    /search?q=zevic&page=2   200 searching for 'zevic' page 2
+GET    /search                  200 searching for '' page 1
+GET    /nothing/here            404 not found
