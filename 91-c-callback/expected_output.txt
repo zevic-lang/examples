@@ -1,0 +1,6 @@
+sorted: 9 7 5 3 1
+sum of squares 1..4 = 30
+collector received 10
+collector received 20
+unknown handle 1
+collector saw 2 events: 10, 20

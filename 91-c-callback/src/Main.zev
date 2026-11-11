@@ -1,0 +1,86 @@
+// Callbacks between C and Zevic. Three patterns:
+//   1. qsort from libc calls a Zevic comparison function.
+//   2. A C routine walks a range, calls a Zevic `fn` for every step and adds up the results.
+//   3. A C event source keeps a callback and a Handle id that refers to a Zevic object, so the callback can
+//      find its way back to the object (callbacks cannot capture variables).
+//
+//   native/events.c   the C side of 2 and 3
+//
+// Shows: `fn(...) -> ...` parameters in extern declarations, non-capturing functions as callbacks,
+// Handle<T> to keep a Zevic object alive for C, and Handle.Get to turn the id back into the object.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+extern "C" {
+    fn qsort(base: *CVoid, n: CSizeT, size: CSizeT, cmp: fn(*CVoid, *CVoid) -> CInt) -> CVoid
+
+    fn ev_sum(from: CInt, to: CInt, f: fn(CInt) -> CInt) -> CInt
+    fn ev_subscribe(id: CULong, f: fn(CULong, CInt) -> Unit) -> CVoid
+    fn ev_fire(value: CInt) -> CVoid
+}
+
+// A comparison for qsort over an array of CInt: descending order.
+// (There is no `*p` syntax yet, so the values are read through a tiny C helper.)
+extern "C" {
+    fn ev_read_int(p: *CVoid) -> CInt
+}
+
+fn descending(a: *CVoid, b: *CVoid) -> CInt {
+    let x: I32 = ev_read_int(a).ToI32()
+    let y: I32 = ev_read_int(b).ToI32()
+    if (x < y) { 1.ToCInt() } else if (x > y) { (-1).ToCInt() } else { 0.ToCInt() }
+}
+
+// A callback cannot capture state, so this one is a pure function: C adds up whatever it returns.
+fn square(i: CInt) -> CInt {
+    (i.ToI32() * i.ToI32()).ToCInt()
+}
+
+class Collector {
+    name: String
+    seen: Array<I32> = []
+
+    fn Init(name: String) {
+        this.name = name
+    }
+}
+
+// A callback that returns nothing is declared `-> Unit` on the Zevic side.
+fn onEvent(id: CULong, value: CInt) {
+    match (Handle.Get<Collector>(id)) {
+        Some(found) => {
+            mut c: Collector = found
+            c.seen.Push(value.ToI32())
+            Console.Println("${c.name} received ${value.ToI32()}")
+        },
+        None => Console.Println("unknown handle ${id.ToU64()}"),
+    }
+}
+
+fn Main() {
+    // 1. qsort with a Zevic comparison.
+    mut nums: Array<CInt> = [5.ToCInt(), 1.ToCInt(), 9.ToCInt(), 3.ToCInt(), 7.ToCInt()]
+    let count: CSizeT = 5
+    let width: CSizeT = 4
+    qsort(nums.Ptr(), count, width, descending)
+    mut line: String = "sorted:"
+    for (n in nums) { line = "${line} ${n.ToI32()}" }
+    Console.Println(line)
+
+    // 2. A C loop calling back into Zevic.
+    let total: CInt = ev_sum(1.ToCInt(), 5.ToCInt(), square)
+    Console.Println("sum of squares 1..4 = ${total.ToI32()}")
+
+    // 3. A registered object that C hands back through an id.
+    let collector: Collector = Collector.New("collector")
+    let h: Handle<Collector> = Handle.New(collector)
+    ev_subscribe(h.Id(), onEvent)
+    ev_fire(10.ToCInt())
+    ev_fire(20.ToCInt())
+    h.Release()
+    ev_fire(30.ToCInt())
+    Console.Println("collector saw ${collector.seen.Len()} events: ${collector.seen[0]}, ${collector.seen[1]}")
+}
