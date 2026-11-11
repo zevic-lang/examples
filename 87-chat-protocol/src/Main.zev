@@ -1,0 +1,107 @@
+// A line-based chat protocol: commands such as "NICK ann" or "MSG bob hello" are parsed into an enum, and a
+// server state machine (nicknames, rooms) reacts to them. No sockets are involved, so the whole conversation
+// is reproducible; plugging it into Zevic.Net is a matter of feeding it the lines read from a connection.
+// Shows: parsing into enums with error values, a stateful server class, and Result-based command handling.
+// Library: Zevic.Console, Zevic.Text, Zevic.Error.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+enum Command {
+    Nick(String),
+    Join(String),
+    Msg(String, String),
+    Who,
+    Quit,
+}
+
+fn parse(line: String) -> Result<Command, Error> {
+    let words: Array<String> = Text.Split(Text.Trim(line), " ").Filter((s: String) => s.Len() > 0)
+    if (words.Len() == 0) { return Err(Error.New(ErrorKind.Invalid, "empty command")) }
+    let verb: String = Text.ToUpper(words[0])
+    if (verb == "NICK" && words.Len() == 2) { return Ok(Command.Nick(words[1])) }
+    if (verb == "JOIN" && words.Len() == 2) { return Ok(Command.Join(words[1])) }
+    if (verb == "MSG" && words.Len() >= 3) {
+        // Everything after the target is the message text.
+        let rest: String = Text.Join(words.Slice(2, words.Len()), " ")
+        return Ok(Command.Msg(words[1], rest))
+    }
+    if (verb == "WHO" && words.Len() == 1) { return Ok(Command.Who) }
+    if (verb == "QUIT" && words.Len() == 1) { return Ok(Command.Quit) }
+    Err(Error.New(ErrorKind.InvalidFormat, "bad command: ${line}"))
+}
+
+class Server {
+    nicks: Map<String, String> = Map.New() // connection id -> nickname
+    rooms: Map<String, Array<String>> = Map.New()
+
+    fn nameOf(conn: String) -> Result<String, Error> {
+        match (this.nicks.Get(conn)) {
+            Some(n) => Ok(n),
+            None => Err(Error.New(ErrorKind.Permission, "choose a nickname first")),
+        }
+    }
+
+    mut fn Handle(conn: String, cmd: Command) -> Result<String, Error> {
+        match (cmd) {
+            Command.Nick(n) => {
+                for (existing in this.nicks.Values()) {
+                    if (existing == n) { return Err(Error.New(ErrorKind.Other, "nickname ${n} is taken")) }
+                }
+                this.nicks.Set(conn, n)
+                Ok("welcome, ${n}")
+            },
+            Command.Join(room) => {
+                let who: String = this.nameOf(conn)?
+                mut members: Array<String> = this.rooms.GetOr(room, [])
+                members.Push(who)
+                this.rooms.Set(room, members)
+                Ok("${who} joined #${room} (${members.Len()} here)")
+            },
+            Command.Msg(target, text) => {
+                let who: String = this.nameOf(conn)?
+                Ok("<${who}> to ${target}: ${text}")
+            },
+            Command.Who => {
+                let names: Array<String> = this.nicks.Values().Sorted()
+                Ok("online: ${Text.Join(names, ", ")}")
+            },
+            Command.Quit => {
+                let who: String = this.nameOf(conn)?
+                this.nicks.Remove(conn)
+                Ok("${who} left")
+            },
+        }
+    }
+}
+
+fn Main() {
+    let script: Array<(String, String)> = [
+        ("c1", "MSG bob hi"),
+        ("c1", "NICK ann"),
+        ("c2", "NICK ann"),
+        ("c2", "NICK bob"),
+        ("c1", "JOIN zevic"),
+        ("c2", "join zevic"),
+        ("c1", "MSG bob   hello    there, bob"),
+        ("c1", "WHO"),
+        ("c2", "FLY away"),
+        ("c2", ""),
+        ("c2", "QUIT"),
+        ("c1", "WHO"),
+    ]
+    mut server: Server = Server.New()
+    for (step in script) {
+        let (conn, line): (String, String) = step
+        let reply: String = match (parse(line)) {
+            Ok(cmd) => match (server.Handle(conn, cmd)) {
+                Ok(text) => text,
+                Err(e) => "error ${e.Kind().ToString()}: ${e.Message()}",
+            },
+            Err(e) => "error ${e.Kind().ToString()}: ${e.Message()}",
+        }
+        Console.Println("${conn} > ${line}\n     ${reply}")
+    }
+}

@@ -1,0 +1,24 @@
+c1 > MSG bob hi
+     error Permission: choose a nickname first
+c1 > NICK ann
+     welcome, ann
+c2 > NICK ann
+     error Other: nickname ann is taken
+c2 > NICK bob
+     welcome, bob
+c1 > JOIN zevic
+     ann joined #zevic (1 here)
+c2 > join zevic
+     bob joined #zevic (2 here)
+c1 > MSG bob   hello    there, bob
+     <ann> to bob: hello there, bob
+c1 > WHO
+     online: ann, bob
+c2 > FLY away
+     error InvalidFormat: bad command: FLY away
+c2 > 
+     error Invalid: empty command
+c2 > QUIT
+     bob left
+c1 > WHO
+     online: ann
