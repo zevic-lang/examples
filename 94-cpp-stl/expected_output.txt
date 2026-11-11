@@ -1,0 +1,5 @@
+distinct: 3
+apple: 3, pear: 2, kiwi: 0
+first in map order: apple
+popped: 9 7 4 3 1
+std::sort desc: 8 6 3 1

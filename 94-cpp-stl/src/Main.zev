@@ -1,0 +1,80 @@
+// Using the C++ standard library from Zevic. Zevic cannot see C++ classes or templates, so the C++ side
+// wraps them in `extern "C"` functions and hands out an opaque id for each object (a std::map<string,int>
+// word counter and a std::priority_queue of ints). The Zevic side then wraps those ids in classes.
+//
+//   native/wrap.cpp   the C++ code: std::map, std::priority_queue, std::sort
+//
+// Shows: a .cpp file in native/ (built with clang++ and linked with the C++ library automatically),
+// opaque handles as CLong ids, and wrapping a C++ object in a Zevic class.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+extern "C" {
+    fn wc_new() -> CLong
+    fn wc_add(id: CLong, word: CString) -> CVoid
+    fn wc_count(id: CLong, word: CString) -> CInt
+    fn wc_distinct(id: CLong) -> CInt
+    fn wc_first(id: CLong) -> CString // smallest word in std::map order
+    fn wc_free(id: CLong) -> CVoid
+
+    fn pq_new() -> CLong
+    fn pq_push(id: CLong, x: CInt) -> CVoid
+    fn pq_pop(id: CLong) -> CInt
+    fn pq_len(id: CLong) -> CInt
+    fn pq_free(id: CLong) -> CVoid
+
+    fn cpp_sort_desc(p: *CVoid, n: CInt) -> CVoid
+}
+
+class WordCounter {
+    id: CLong = 0
+
+    fn Init() {
+        this.id = wc_new()
+    }
+
+    fn Add(w: String) { wc_add(this.id, w.ToC()) }
+    fn Count(w: String) -> I32 { wc_count(this.id, w.ToC()).ToI32() }
+    fn Distinct() -> I32 { wc_distinct(this.id).ToI32() }
+    fn First() -> String { String.FromC(wc_first(this.id)) }
+    fn Close() { wc_free(this.id) }
+}
+
+class MaxHeap {
+    id: CLong = 0
+
+    fn Init() {
+        this.id = pq_new()
+    }
+
+    fn Push(x: I32) { pq_push(this.id, x.ToCInt()) }
+    fn Pop() -> I32 { pq_pop(this.id).ToI32() }
+    fn Len() -> I32 { pq_len(this.id).ToI32() }
+    fn Close() { pq_free(this.id) }
+}
+
+fn Main() {
+    let wc: WordCounter = WordCounter.New()
+    for (w in ["pear", "apple", "fig", "apple", "pear", "apple"]) { wc.Add(w) }
+    Console.Println("distinct: ${wc.Distinct()}")
+    Console.Println("apple: ${wc.Count("apple")}, pear: ${wc.Count("pear")}, kiwi: ${wc.Count("kiwi")}")
+    Console.Println("first in map order: ${wc.First()}")
+    wc.Close()
+
+    let heap: MaxHeap = MaxHeap.New()
+    let items: Array<I32> = [4, 9, 1, 7, 3]
+    for (x in items) { heap.Push(x) }
+    mut out: String = "popped:"
+    while (heap.Len() > 0) { out = "${out} ${heap.Pop()}" }
+    Console.Println(out)
+    heap.Close()
+
+    mut xs: Array<CInt> = [3.ToCInt(), 8.ToCInt(), 1.ToCInt(), 6.ToCInt()]
+    cpp_sort_desc(xs.Ptr(), 4.ToCInt())
+    mut s: String = "std::sort desc:"
+    for (x in xs) { s = "${s} ${x.ToI32()}" }
+    Console.Println(s)
+}
