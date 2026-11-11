@@ -1,0 +1,26 @@
+module Greeter
+
+import Zevic.Test
+
+// Greet one person, or everybody in a list: "Hello, ann, bob and cy!".
+fn Greet(who: String) -> String {
+    "Hello, ${who}!"
+}
+
+fn GreetAll(names: Array<String>) -> String {
+    if (names.Len() == 0) { return "Hello, nobody!" }
+    if (names.Len() == 1) { return Greet(names[0]) }
+    let head: Array<String> = names.Slice(0, names.Len() - 1)
+    let tail: String = names[names.Len() - 1]
+    "Hello, ${head.Join(", ")} and ${tail}!"
+}
+
+test "Greet names the person" {
+    Test.Equal(Greet("Zevic"), "Hello, Zevic!")
+}
+
+test "GreetAll joins with commas and 'and'" {
+    Test.Equal(GreetAll([]), "Hello, nobody!")
+    Test.Equal(GreetAll(["ann"]), "Hello, ann!")
+    Test.Equal(GreetAll(["ann", "bob", "cy"]), "Hello, ann, bob and cy!")
+}

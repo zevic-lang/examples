@@ -1,0 +1,10 @@
+== zevpm test (greeter)
+running 2 tests
+  ok    Greet names the person
+  ok    GreetAll joins with commas and 'and'
+
+2 passed, 0 failed
+== zevpm run
+Hello, Zevic!
+Hello, ann, bob and cy!
+Hello, nobody!

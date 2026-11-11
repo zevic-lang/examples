@@ -1,0 +1,17 @@
+// A package that depends on another package. zevic.toml lists `Greeter = { path = "greeter" }` under
+// [deps]; zevpm builds the dependency first and the program imports it by its module name. The dependency
+// has its own tests (zevpm test inside greeter/). run.sh shows the three commands in order.
+//
+// Shows: [deps] with a path dependency, `import Greeter`, zevpm build / test / run.
+// Library: Zevic.Console, Greeter (local).
+
+module Main
+
+import Greeter
+import Zevic.Console
+
+fn Main() {
+    Console.Println(Greeter.Greet("Zevic"))
+    Console.Println(Greeter.GreetAll(["ann", "bob", "cy"]))
+    Console.Println(Greeter.GreetAll([]))
+}
