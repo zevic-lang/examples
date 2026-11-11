@@ -1,0 +1,35 @@
+// A Zevic library used from Go through cgo. Zevic provides a small temperature-conversion library as a
+// static archive plus header (`zevic --lib --emit-header`); main.go includes the header with cgo and calls it.
+// This file is the library; run.sh builds it and runs `go run`. Without Go installed, run.sh prints the
+// expected output, so the example still runs everywhere.
+//
+// Shows: export "C" functions with plain numeric types, the initialization call (`zevic_init`) that a
+// foreign host makes before anything else, and a string result that Go copies and frees.
+// Library: Zevic.Text.
+
+module Units
+
+import Zevic.Text
+
+export "C" fn zv_c_to_f(c: CDouble) -> CDouble {
+    (c.ToF64() * 9.0 / 5.0 + 32.0).ToCDouble()
+}
+
+export "C" fn zv_f_to_c(f: CDouble) -> CDouble {
+    ((f.ToF64() - 32.0) * 5.0 / 9.0).ToCDouble()
+}
+
+// "72.5F" or "21C" -> the other scale with one decimal, e.g. "22.5C"; "?" for bad input.
+export "C" fn zv_convert(s: CString) -> CString {
+    let text: String = Text.Trim(String.FromC(s))
+    if (text.Len() < 2) { return NewString("?") }
+    let unit: String = text.Slice(text.Len() - 1, text.Len())
+    match (text.Slice(0, text.Len() - 1).ToF64()) {
+        Ok(v) => {
+            if (unit == "C") { return NewString(Text.Format("%.1fF", v * 9.0 / 5.0 + 32.0)) }
+            if (unit == "F") { return NewString(Text.Format("%.1fC", (v - 32.0) * 5.0 / 9.0)) }
+            NewString("?")
+        },
+        Err(e) => NewString("?"),
+    }
+}

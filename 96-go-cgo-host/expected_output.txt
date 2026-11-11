@@ -1,0 +1,11 @@
+ -40.0 C =  -40.0 F
+   0.0 C =   32.0 F
+  36.6 C =   97.9 F
+ 100.0 C =  212.0 F
+212 F = 100.0 C
+convert("21C") = 69.8F
+convert("72.5F") = 22.5C
+convert(" 0C ") = 32.0F
+convert("hot") = ?
+convert("12K") = ?
+convert("C") = ?
