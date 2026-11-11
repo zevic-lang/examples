@@ -1,0 +1,19 @@
+== a purchase with change
+Idle + select cola -> Idle: insert a coin first
+Idle + coin 100 -> HasMoney(100): credit 100
+HasMoney(100) + select cola -> HasMoney(100): cola costs 150, you have 100
+HasMoney(100) + coin 100 -> HasMoney(200): credit 200
+HasMoney(200) + select cola -> Dispensing(cola): dispensing cola, change 50
+Dispensing(cola) + select cola -> Dispensing(cola): please take your cola first
+Dispensing(cola) + take -> Idle: enjoy your cola
+== changing one's mind
+Idle + coin 50 -> HasMoney(50): credit 50
+HasMoney(50) + select tea -> HasMoney(50): we do not sell tea
+HasMoney(50) + refund -> Idle: refunded 50
+Idle + refund -> Idle: nothing to refund
+== vandalism
+Idle + coin 20 -> HasMoney(20): credit 20
+HasMoney(20) + kick -> OutOfOrder: ouch, it broke (and kept 20)
+OutOfOrder + coin 100 -> OutOfOrder: the machine is out of order
+== traffic light
+red -> green -> yellow -> red -> green -> yellow -> red -> green

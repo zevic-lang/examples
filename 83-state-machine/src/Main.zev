@@ -1,0 +1,124 @@
+// State machines with enums and `match`: a vending machine whose behaviour depends on its state and the
+// event it receives, and a traffic light that cycles. Every state/event pair is handled, and the compiler
+// checks that no case was forgotten.
+// Shows: enums with data, a transition function returning a new state plus a message, and replaying a script.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+enum State {
+    Idle,
+    HasMoney(I64),
+    Dispensing(String),
+    OutOfOrder,
+}
+
+enum Event {
+    Coin(I64),
+    Select(String),
+    Refund,
+    Take,
+    Kick,
+}
+
+struct Outcome {
+    Next: State
+    Message: String
+
+    fn Init(next: State, message: String) {
+        this.Next = next
+        this.Message = message
+    }
+}
+
+fn price(item: String) -> Option<I64> {
+    if (item == "cola") { Some(150) } else if (item == "chips") { Some(100) } else if (item == "gum") { Some(50) } else { None }
+}
+
+// The whole machine: one function from (state, event) to (state, message).
+fn step(s: State, e: Event) -> Outcome {
+    match (s) {
+        State.OutOfOrder => Outcome.New(s, "the machine is out of order"),
+        State.Idle => match (e) {
+            Event.Coin(c) => Outcome.New(State.HasMoney(c), "credit ${c}"),
+            Event.Select(_) => Outcome.New(s, "insert a coin first"),
+            Event.Refund => Outcome.New(s, "nothing to refund"),
+            Event.Take => Outcome.New(s, "nothing to take"),
+            Event.Kick => Outcome.New(State.OutOfOrder, "ouch, it broke"),
+        },
+        State.HasMoney(have) => match (e) {
+            Event.Coin(c) => Outcome.New(State.HasMoney(have + c), "credit ${have + c}"),
+            Event.Select(item) => match (price(item)) {
+                None => Outcome.New(s, "we do not sell ${item}"),
+                Some(p) => {
+                    if (have < p) {
+                        Outcome.New(s, "${item} costs ${p}, you have ${have}")
+                    } else if (have == p) {
+                        Outcome.New(State.Dispensing(item), "dispensing ${item}")
+                    } else {
+                        Outcome.New(State.Dispensing(item), "dispensing ${item}, change ${have - p}")
+                    }
+                },
+            },
+            Event.Refund => Outcome.New(State.Idle, "refunded ${have}"),
+            Event.Take => Outcome.New(s, "nothing to take"),
+            Event.Kick => Outcome.New(State.OutOfOrder, "ouch, it broke (and kept ${have})"),
+        },
+        State.Dispensing(item) => match (e) {
+            Event.Take => Outcome.New(State.Idle, "enjoy your ${item}"),
+            Event.Kick => Outcome.New(State.OutOfOrder, "ouch, it broke"),
+            _ => Outcome.New(s, "please take your ${item} first"),
+        },
+    }
+}
+
+fn name(s: State) -> String {
+    match (s) {
+        State.Idle => "Idle",
+        State.HasMoney(c) => "HasMoney(${c})",
+        State.Dispensing(i) => "Dispensing(${i})",
+        State.OutOfOrder => "OutOfOrder",
+    }
+}
+
+fn describe(e: Event) -> String {
+    match (e) {
+        Event.Coin(c) => "coin ${c}",
+        Event.Select(i) => "select ${i}",
+        Event.Refund => "refund",
+        Event.Take => "take",
+        Event.Kick => "kick",
+    }
+}
+
+fn play(title: String, events: Array<Event>) {
+    Console.Println("== ${title}")
+    mut state: State = State.Idle
+    for (e in events) {
+        let r: Outcome = step(state, e)
+        Console.Println("${name(state)} + ${describe(e)} -> ${name(r.Next)}: ${r.Message}")
+        state = r.Next
+    }
+}
+
+fn Main() {
+    play("a purchase with change", [Event.Select("cola"), Event.Coin(100), Event.Select("cola"), Event.Coin(100), Event.Select("cola"), Event.Select("cola"), Event.Take])
+    play("changing one's mind", [Event.Coin(50), Event.Select("tea"), Event.Refund, Event.Refund])
+    play("vandalism", [Event.Coin(20), Event.Kick, Event.Coin(100)])
+
+    // The traffic light: a cycle without events.
+    Console.Println("== traffic light")
+    mut light: String = "red"
+    mut seen: Array<String> = []
+    for (i in 0..8) {
+        seen.Push(light)
+        light = match (light) {
+            "red" => "green",
+            "green" => "yellow",
+            _ => "red",
+        }
+    }
+    Console.Println(seen.Join(" -> "))
+}

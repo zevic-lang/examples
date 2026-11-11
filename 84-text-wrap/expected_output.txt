@@ -1,0 +1,34 @@
+--- wrapped at 40
+Zevic is a small, statically typed
+language that compiles to native code
+through LLVM. It has generics, enums
+with data, a package manager and a
+standard library that comes with the
+compiler.
+--- right aligned at 40
+      Zevic is a small, statically typed
+   language that compiles to native code
+    through LLVM. It has generics, enums
+      with data, a package manager and a
+    standard library that comes with the
+                               compiler.
+--- centred at 40
+   Zevic is a small, statically typed   
+ language that compiles to native code  
+  through LLVM. It has generics, enums  
+   with data, a package manager and a   
+  standard library that comes with the  
+               compiler.                
+--- justified at 40 (the last line stays left aligned)
+Zevic   is  a  small,  statically  typed
+language  that  compiles  to native code
+through  LLVM.  It  has  generics, enums
+with  data,  a  package  manager  and  a
+standard  library  that  comes  with the
+compiler.
+--- in a box, 24 wide, with a long word
++--------------------------+
+| A tiny box with          |
+| supercalifragilisticexpialidocious |
+| inside and 日本語のテキスト too  |
++--------------------------+

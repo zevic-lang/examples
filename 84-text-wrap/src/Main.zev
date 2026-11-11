@@ -1,0 +1,87 @@
+// Formatting paragraphs: word wrap at a given width, left / right / centred / justified alignment and a
+// text box with a border. Width is measured in characters (one column each), so accented letters line up;
+// East Asian wide characters take two columns in a terminal, which this simple version does not know about.
+// Shows: Text.Words, building lines greedily, padding, and splitting extra spaces fairly when justifying.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+fn width(s: String) -> I64 { Text.ToChars(s).Len() }
+
+// Greedy wrapping: put as many words on a line as fit. A word longer than the width gets its own line.
+fn wrap(text: String, max: I64) -> Array<String> {
+    mut lines: Array<String> = []
+    mut current: String = ""
+    for (word in Text.Words(text)) {
+        if (current.Len() == 0) {
+            current = word
+        } else if (width(current) + 1 + width(word) <= max) {
+            current = current + " " + word
+        } else {
+            lines.Push(current)
+            current = word
+        }
+    }
+    if (current.Len() > 0) { lines.Push(current) }
+    lines
+}
+
+// Spread the spaces so that the line is exactly `max` wide; the leftmost gaps get the extra ones.
+fn justify(line: String, max: I64) -> String {
+    let words: Array<String> = Text.Words(line)
+    if (words.Len() == 1) { return line }
+    mut letters: I64 = 0
+    for (w in words) {
+        letters += width(w)
+    }
+    let gaps: I64 = words.Len() - 1
+    let spaces: I64 = max - letters
+    mut out: StringBuilder = StringBuilder.New()
+    for (i in 0..words.Len()) {
+        out.Append(words[i])
+        if (i < gaps) {
+            let n: I64 = spaces / gaps + (if (i < spaces % gaps) { 1 } else { 0 })
+            out.Append(Text.Repeat(" ", n))
+        }
+    }
+    out.ToString()
+}
+
+fn box(lines: Array<String>, max: I64) {
+    Console.Println("+" + Text.Repeat("-", max + 2) + "+")
+    for (l in lines) {
+        Console.Println("| ${Text.PadRight(l, max, ' ')} |")
+    }
+    Console.Println("+" + Text.Repeat("-", max + 2) + "+")
+}
+
+fn Main() {
+    let text: String = "Zevic is a small, statically typed language that compiles to native code through LLVM. It has generics, enums with data, a package manager and a standard library that comes with the compiler."
+
+    Console.Println("--- wrapped at 40")
+    let lines: Array<String> = wrap(text, 40)
+    for (l in lines) {
+        Console.Println("${l}")
+    }
+
+    Console.Println("--- right aligned at 40")
+    for (l in lines) {
+        Console.Println(Text.PadLeft(l, 40, ' '))
+    }
+
+    Console.Println("--- centred at 40")
+    for (l in lines) {
+        Console.Println(Text.Center(l, 40, ' '))
+    }
+
+    Console.Println("--- justified at 40 (the last line stays left aligned)")
+    for (i in 0..lines.Len()) {
+        Console.Println(if (i < lines.Len() - 1) { justify(lines[i], 40) } else { lines[i] })
+    }
+
+    Console.Println("--- in a box, 24 wide, with a long word")
+    box(wrap("A tiny box with supercalifragilisticexpialidocious inside and 日本語のテキスト too", 24), 24)
+}
