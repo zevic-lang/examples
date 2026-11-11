@@ -1,0 +1,35 @@
+// Calling Rust from Zevic. rs/lib.rs is compiled with `rustc --crate-type staticlib` into libmathrs.a and
+// linked into the Zevic program as an ordinary static library; the Rust functions are `extern "C"` and
+// `#[no_mangle]`, so Zevic sees them like any C function. run.sh does the building; when rustc is not
+// installed it prints the expected output instead, so the example can run everywhere.
+//
+// Shows: linking a foreign static library, passing an array as pointer + length, and strings both ways
+// (Rust copies the bytes it needs; Zevic frees nothing here because Rust returns plain numbers).
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+extern "C" {
+    fn rs_gcd(a: CULongLong, b: CULongLong) -> CULongLong
+    fn rs_is_prime(n: CULongLong) -> CInt
+    fn rs_sum(p: *CLongLong, n: CSizeT) -> CLongLong
+    fn rs_fnv1a(s: CString) -> CUInt
+}
+
+fn Main() {
+    Console.Println("gcd(1071, 462) = ${rs_gcd(1071.ToCULongLong(), 462.ToCULongLong()).ToU64()}")
+
+    mut primes: String = "primes below 40:"
+    for (n in 2..40) {
+        if (rs_is_prime(n.ToCULongLong().Unwrap()).ToI32() == 1) { primes = "${primes} ${n}" }
+    }
+    Console.Println(primes)
+
+    mut xs: Array<CLongLong> = [10.ToCLongLong(), (-3).ToCLongLong(), 25.ToCLongLong(), 8.ToCLongLong()]
+    let count: CSizeT = 4
+    Console.Println("sum = ${rs_sum(xs.Ptr(), count).ToI64()}")
+
+    Console.Println("fnv1a(\"zevic\") = ${rs_fnv1a("zevic".ToC()).ToU32()}")
+}
