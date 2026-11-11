@@ -1,0 +1,111 @@
+// A priority event queue driving a small discrete-event simulation. Events carry a time and a name; the queue
+// always yields the earliest one, ties are broken by insertion order, and handlers may schedule new events.
+// Shows: a binary min-heap written by hand, a Comparable-free ordering via explicit keys, and a loop that
+// consumes and produces work at the same time.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+struct Event {
+    Time: I64
+    Seq: I64
+    Name: String
+
+    fn Init(time: I64, seq: I64, name: String) {
+        this.Time = time
+        this.Seq = seq
+        this.Name = name
+    }
+}
+
+// True when a must be handled before b.
+fn before(a: Event, b: Event) -> Bool {
+    if (a.Time != b.Time) { a.Time < b.Time } else { a.Seq < b.Seq }
+}
+
+class Queue {
+    heap: Array<Event> = []
+    nextSeq: I64 = 0
+
+    fn Len() -> I64 { this.heap.Len() }
+
+    mut fn Push(time: I64, name: String) {
+        this.heap.Push(Event.New(time, this.nextSeq, name))
+        this.nextSeq = this.nextSeq + 1
+        mut i: I64 = this.heap.Len() - 1
+        while (i > 0) {
+            let parent: I64 = (i - 1) / 2
+            if (!before(this.heap[i], this.heap[parent])) { break }
+            this.swap(i, parent)
+            i = parent
+        }
+    }
+
+    mut fn swap(i: I64, j: I64) {
+        let t: Event = this.heap[i]
+        this.heap[i] = this.heap[j]
+        this.heap[j] = t
+    }
+
+    mut fn Pop() -> Option<Event> {
+        let n: I64 = this.heap.Len()
+        if (n == 0) { return None }
+        let top: Event = this.heap[0]
+        this.heap[0] = this.heap[n - 1]
+        this.heap.Pop()
+        let size: I64 = n - 1
+        mut i: I64 = 0
+        while (true) {
+            let l: I64 = 2 * i + 1
+            let r: I64 = l + 1
+            mut best: I64 = i
+            if (l < size && before(this.heap[l], this.heap[best])) { best = l }
+            if (r < size && before(this.heap[r], this.heap[best])) { best = r }
+            if (best == i) { break }
+            this.swap(i, best)
+            i = best
+        }
+        Some(top)
+    }
+}
+
+fn Main() {
+    mut q: Queue = Queue.New()
+    q.Push(5, "coffee machine ready")
+    q.Push(1, "customer arrives")
+    q.Push(3, "customer orders")
+    q.Push(3, "barista notices") // same time as the order: handled second
+    q.Push(9, "shop closes")
+
+    mut served: I64 = 0
+    while (q.Len() > 0) {
+        match (q.Pop()) {
+            Some(e) => {
+                Console.Println("t=${e.Time} ${e.Name}")
+                // Handlers schedule follow-up events.
+                if (e.Name == "customer orders") { q.Push(e.Time + 4, "order delivered") }
+                if (e.Name == "order delivered") {
+                    served = served + 1
+                    if (served < 2) { q.Push(e.Time + 1, "customer arrives") }
+                }
+                if (e.Name == "customer arrives" && e.Time > 1) { q.Push(e.Time + 1, "customer orders") }
+            },
+            None => {},
+        }
+    }
+    Console.Println("served ${served} customers")
+
+    // A heap sorts: push shuffled numbers, pop them in order.
+    mut nums: Queue = Queue.New()
+    for (x in [42, 7, 19, 3, 88, 1, 56, 23]) { nums.Push(x, "n${x}") }
+    mut out: Array<String> = []
+    while (nums.Len() > 0) {
+        match (nums.Pop()) {
+            Some(e) => out.Push(e.Name),
+            None => {},
+        }
+    }
+    Console.Println(out.Join(" "))
+}

@@ -1,0 +1,11 @@
+t=1 customer arrives
+t=3 customer orders
+t=3 barista notices
+t=5 coffee machine ready
+t=7 order delivered
+t=8 customer arrives
+t=9 shop closes
+t=9 customer orders
+t=13 order delivered
+served 2 customers
+n1 n3 n7 n19 n23 n42 n56 n88
