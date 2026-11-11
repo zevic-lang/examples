@@ -1,0 +1,7 @@
+centroid: (2.0, 1.5)
+perimeter: 14.0
+bounds: 0.0,0.0 .. 4.0,3.0
+moved corner: (14.0, 2.0)
+array still has: (4.0, 3.0)
+centroid after: (4.5, 1.25)
+perimeter after: 31.23370787480377

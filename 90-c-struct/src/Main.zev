@@ -1,0 +1,61 @@
+// extern struct: a Zevic type with exactly the layout of a C struct. Here C code does the geometry on
+// an array of 2D points, and Zevic passes them by pointer.
+//
+//   native/geometry.c   centroid, bounding box and a translate-in-place function
+//
+// Shows: `extern "C" { struct ... }`, `&p` on a mut variable, Array.Ptr() for passing many structs at once,
+// C functions return no structs (results come back through a pointer),
+// reading fields back as C types and converting them with .ToF64() / .ToI32().
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+extern "C" {
+    struct Vec2 { X: CDouble, Y: CDouble }
+    struct Box { MinX: CDouble, MinY: CDouble, MaxX: CDouble, MaxY: CDouble }
+
+    fn geo_translate(p: *Vec2, dx: CDouble, dy: CDouble) -> CVoid
+    fn geo_centroid(pts: *Vec2, n: CInt, out: *Vec2) -> CVoid
+    fn geo_bounds(pts: *Vec2, n: CInt, out: *Box) -> CVoid
+    fn geo_perimeter(pts: *Vec2, n: CInt) -> CDouble
+}
+
+fn show(label: String, v: Vec2) {
+    Console.Println("${label}: (${v.X.ToF64()}, ${v.Y.ToF64()})")
+}
+
+fn centroid(pts: Array<Vec2>) -> Vec2 {
+    mut c: Vec2 = Vec2.New(0.0, 0.0)
+    geo_centroid(pts.Ptr(), pts.Len().ToCIntWrap(), &c)
+    c
+}
+
+fn Main() {
+    // A 4 x 3 rectangle, listed counter-clockwise.
+    mut pts: Array<Vec2> = [
+        Vec2.New(0.0, 0.0),
+        Vec2.New(4.0, 0.0),
+        Vec2.New(4.0, 3.0),
+        Vec2.New(0.0, 3.0),
+    ]
+    let n: CInt = pts.Len().ToCIntWrap()
+
+    show("centroid", centroid(pts))
+    Console.Println("perimeter: ${geo_perimeter(pts.Ptr(), n).ToF64()}")
+
+    mut box: Box = Box.New(0.0, 0.0, 0.0, 0.0)
+    geo_bounds(pts.Ptr(), n, &box)
+    Console.Println("bounds: ${box.MinX.ToF64()},${box.MinY.ToF64()} .. ${box.MaxX.ToF64()},${box.MaxY.ToF64()}")
+
+    // Change one struct in place through a pointer, then look at the array again.
+    mut corner: Vec2 = pts[2]
+    geo_translate(&corner, 10.0, -1.0)
+    show("moved corner", corner)
+    show("array still has", pts[2])
+
+    pts[2] = corner
+    show("centroid after", centroid(pts))
+    Console.Println("perimeter after: ${geo_perimeter(pts.Ptr(), n).ToF64()}")
+}
