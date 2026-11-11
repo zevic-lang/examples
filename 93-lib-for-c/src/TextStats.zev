@@ -1,0 +1,50 @@
+// A Zevic library meant to be used from C. `zevic --lib --emit-header` turns it into a static archive (the
+// Zevic runtime travels inside) and a C header that declares every `export "C"` function. host.c in this
+// folder is an ordinary C program that includes that header; run.sh builds both and runs the host.
+//
+// Shows: export "C" with C types only, a library without Main, and passing strings both ways
+// (the returned string is malloc'ed and the caller frees it).
+// Library: Zevic.Text.
+
+module TextStats
+
+import Zevic.Text
+
+// Number of words (runs of non-blank characters).
+export "C" fn ts_words(s: CString) -> CInt {
+    let n: I32 = Text.Words(String.FromC(s)).Len().ToI32Wrap()
+    n.ToCInt()
+}
+
+// Number of lines; a final line without a newline counts too.
+export "C" fn ts_lines(s: CString) -> CInt {
+    let text: String = String.FromC(s)
+    if (text.Len() == 0) { return 0.ToCInt() }
+    mut n: I32 = Text.Split(text, "\n").Len().ToI32Wrap()
+    if (Text.EndsWith(text, "\n")) { n = n - 1 }
+    n.ToCInt()
+}
+
+// The most frequent word (ties: the one that comes first alphabetically), lower-cased.
+// The result is allocated for C: the caller releases it with free().
+export "C" fn ts_top_word(s: CString) -> CString {
+    mut counts: Map<String, I64> = Map.New()
+    for (w in Text.Words(Text.ToLower(String.FromC(s)))) {
+        counts.Set(w, counts.GetOr(w, 0) + 1)
+    }
+    mut best: String = ""
+    mut bestN: I64 = 0
+    for (w in counts.Keys().Sorted()) {
+        let n: I64 = counts.GetOr(w, 0)
+        if (n > bestN) {
+            best = w
+            bestN = n
+        }
+    }
+    NewString(best)
+}
+
+// Reverse the words: "a b c" -> "c b a".
+export "C" fn ts_reverse_words(s: CString) -> CString {
+    NewString(Text.Join(Text.Words(String.FromC(s)).Reversed(), " "))
+}

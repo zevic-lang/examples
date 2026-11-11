@@ -1,0 +1,6 @@
+words: 11
+lines: 3
+lines of "": 0
+lines of "a\n": 1
+top word: the
+reversed: four three two one

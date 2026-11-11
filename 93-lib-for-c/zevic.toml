@@ -1,0 +1,5 @@
+[package]
+name = "TextStats"
+version = "0.4.1"
+kind = "lib"
+zevic = ">=0.4"
