@@ -1,0 +1,117 @@
+// Writing numbers in other systems: Roman numerals (both directions, with error checking) and numbers in any
+// base from 2 to 36.
+// Shows: tables of pairs, Result for bad input, and String.ToI64 / formatting with %x %o.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+let Values: Array<I64> = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+let Symbols: Array<String> = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+
+// 1 to 3999 as a Roman numeral.
+fn toRoman(n: I64) -> Result<String, Error> {
+    if (n < 1 || n > 3999) {
+        return Err(Error.New(ErrorKind.Invalid, "${n} is outside 1..3999"))
+    }
+    mut rest: I64 = n
+    mut out: StringBuilder = StringBuilder.New()
+    for (i in 0..Values.Len()) {
+        while (rest >= Values[i]) {
+            out.Append(Symbols[i])
+            rest -= Values[i]
+        }
+    }
+    Ok(out.ToString())
+}
+
+// Roman numeral text back to a number. Only canonical numerals are accepted: it converts, then writes the
+// result again and compares, which rejects things like "IIII" and "VX".
+fn fromRoman(text: String) -> Result<I64, Error> {
+    let digits: Map<String, I64> = Map<String, I64>.FromPairs([("I", 1), ("V", 5), ("X", 10), ("L", 50), ("C", 100), ("D", 500), ("M", 1000)])
+    let chars: Array<Char> = Text.ToChars(text)
+    if (chars.Len() == 0) {
+        return Err(Error.New(ErrorKind.Invalid, "empty numeral"))
+    }
+    mut total: I64 = 0
+    for (i in 0..chars.Len()) {
+        let v: I64 = match (digits.Get("${chars[i]}")) {
+            Some(x) => x,
+            None => return Err(Error.New(ErrorKind.Invalid, "'${chars[i]}' is not a Roman digit")),
+        }
+        // A smaller digit before a larger one is subtracted (IV = 4).
+        let next: I64 = if (i + 1 < chars.Len()) { digits.GetOr("${chars[i + 1]}", 0) } else { 0 }
+        total += if (v < next) { -v } else { v }
+    }
+    match (toRoman(total)) {
+        Ok(canonical) => {
+            if (canonical != text) {
+                return Err(Error.New(ErrorKind.Invalid, "${text} is not written canonically (${canonical})"))
+            }
+        },
+        Err(e) => return Err(e),
+    }
+    Ok(total)
+}
+
+// A non-negative number in the given base, with digits 0-9 and a-z.
+fn toBase(n: I64, base: I64) -> String {
+    if (n == 0) { return "0" }
+    let digits: String = "0123456789abcdefghijklmnopqrstuvwxyz"
+    mut rest: I64 = n
+    mut out: Array<String> = []
+    while (rest > 0) {
+        out.Push(digits.Slice(rest % base, rest % base + 1))
+        rest = rest / base
+    }
+    out.Reversed().Join("")
+}
+
+fn fromBase(text: String, base: I64) -> Result<I64, Error> {
+    let digits: String = "0123456789abcdefghijklmnopqrstuvwxyz"
+    mut total: I64 = 0
+    for (c in Text.ToChars(Text.ToLower(text))) {
+        let d: I64 = match (Text.IndexOf(digits, "${c}")) {
+            Some(i) => i,
+            None => return Err(Error.New(ErrorKind.Invalid, "'${c}' is not a digit")),
+        }
+        if (d >= base) {
+            return Err(Error.New(ErrorKind.Invalid, "'${c}' is too big for base ${base}"))
+        }
+        total = total * base + d
+    }
+    Ok(total)
+}
+
+fn Show(r: Result<I64, Error>) -> String {
+    match (r) {
+        Ok(v) => "${v}",
+        Err(e) => "error: ${e.Message()}",
+    }
+}
+
+fn Main() {
+    for (n in [1, 4, 9, 14, 40, 90, 400, 1994, 2026, 3999]) {
+        Console.Println("${n} = ${toRoman(n).Unwrap()}")
+    }
+    Console.Println("0 = ${toRoman(0).IsErr()}, 4000 = ${toRoman(4000).IsErr()}")
+    for (s in ["MCMXCIV", "MMXXVI", "XLII", "IIII", "VX", "ABC", ""]) {
+        Console.Println("\"${s}\" -> ${Show(fromRoman(s))}")
+    }
+
+    // Round trip over the whole range.
+    mut ok: Bool = true
+    for (n in 1..=3999) {
+        if (fromRoman(toRoman(n).Unwrap()).Unwrap() != n) { ok = false }
+    }
+    Console.Println("all 3999 numerals survive a round trip: ${ok}")
+
+    // Bases.
+    Console.Println("255 in base 2, 8, 16, 36: ${toBase(255, 2)} ${toBase(255, 8)} ${toBase(255, 16)} ${toBase(255, 36)}")
+    Console.Println("same with Format: ${Text.Format("%x %o", 255, 255)}")
+    Console.Println("ff in base 16: ${Show(fromBase("ff", 16))}, 1010 in base 2: ${Show(fromBase("1010", 2))}, zz in base 36: ${Show(fromBase("ZZ", 36))}")
+    Console.Println("12 in base 2: ${Show(fromBase("12", 2))}, 1g in base 16: ${Show(fromBase("1g", 16))}")
+    Console.Println("round trip of 123456789 through base 36: ${Show(fromBase(toBase(123456789, 36), 36))}")
+}

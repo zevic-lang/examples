@@ -1,0 +1,116 @@
+// Dynamic programming: the 0/1 knapsack, coin change (fewest coins and number of ways) and the longest
+// increasing subsequence. Each fills a table from smaller problems to larger ones.
+// Shows: 1D and 2D tables in flat arrays, reconstructing the answer from the table, and sentinel values.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+struct Item {
+    Name: String
+    Weight: I64
+    Value: I64
+
+    fn Init(name: String, weight: I64, value: I64) {
+        this.Name = name
+        this.Weight = weight
+        this.Value = value
+    }
+}
+
+// Best total value within `capacity`, and which items give it.
+fn knapsack(items: Array<Item>, capacity: I64) -> (I64, Array<String>) {
+    let n: I64 = items.Len()
+    let w: I64 = capacity + 1
+    // best[i * w + c] is the best value using the first i items with capacity c.
+    mut best: Array<I64> = Array<I64>.Repeat(0, (n + 1) * w)
+    for (i in 1..=n) {
+        let item: Item = items[i - 1]
+        for (c in 0..=capacity) {
+            mut v: I64 = best[(i - 1) * w + c]
+            if (item.Weight <= c) {
+                let take: I64 = best[(i - 1) * w + c - item.Weight] + item.Value
+                if (take > v) { v = take }
+            }
+            best[i * w + c] = v
+        }
+    }
+    // Walk back through the table to see which items were taken.
+    mut chosen: Array<String> = []
+    mut c: I64 = capacity
+    mut i: I64 = n
+    while (i > 0) {
+        if (best[i * w + c] != best[(i - 1) * w + c]) {
+            chosen.Push(items[i - 1].Name)
+            c -= items[i - 1].Weight
+        }
+        i -= 1
+    }
+    (best[n * w + capacity], chosen.Reversed())
+}
+
+// Fewest coins for `amount`, or -1 when it cannot be paid.
+fn fewestCoins(coins: Array<I64>, amount: I64) -> I64 {
+    let unreachable: I64 = amount + 1
+    mut table: Array<I64> = Array<I64>.Repeat(unreachable, amount + 1)
+    table[0] = 0
+    for (a in 1..=amount) {
+        for (coin in coins) {
+            if (coin <= a && table[a - coin] + 1 < table[a]) {
+                table[a] = table[a - coin] + 1
+            }
+        }
+    }
+    if (table[amount] == unreachable) { -1 } else { table[amount] }
+}
+
+// The number of different ways to pay `amount` (the order of coins does not matter).
+fn waysToPay(coins: Array<I64>, amount: I64) -> I64 {
+    mut ways: Array<I64> = Array<I64>.Repeat(0, amount + 1)
+    ways[0] = 1
+    for (coin in coins) {
+        for (a in coin..=amount) {
+            ways[a] += ways[a - coin]
+        }
+    }
+    ways[amount]
+}
+
+// Length of the longest strictly increasing subsequence.
+fn longestIncreasing(xs: Array<I64>) -> I64 {
+    if (xs.Len() == 0) { return 0 }
+    mut len: Array<I64> = Array<I64>.Repeat(1, xs.Len())
+    mut best: I64 = 1
+    for (i in 1..xs.Len()) {
+        for (j in 0..i) {
+            if (xs[j] < xs[i] && len[j] + 1 > len[i]) { len[i] = len[j] + 1 }
+        }
+        if (len[i] > best) { best = len[i] }
+    }
+    best
+}
+
+fn Main() {
+    let items: Array<Item> = [
+        Item.New("map", 9, 150),
+        Item.New("compass", 13, 35),
+        Item.New("water", 153, 200),
+        Item.New("sandwich", 50, 160),
+        Item.New("glucose", 15, 60),
+        Item.New("tin", 68, 45),
+        Item.New("banana", 27, 60),
+        Item.New("apple", 39, 40),
+    ]
+    let (value, names): (I64, Array<String>) = knapsack(items, 200)
+    Console.Println("knapsack of 200: value ${value} with ${names.Join(", ")}")
+    let (small, smallNames): (I64, Array<String>) = knapsack(items, 20)
+    Console.Println("knapsack of 20: value ${small} with ${smallNames.Join(", ")}")
+
+    Console.Println("fewest coins for 63 with 1,5,10,21,25: ${fewestCoins([1, 5, 10, 21, 25], 63)}")
+    Console.Println("fewest coins for 7 with 2,4: ${fewestCoins([2, 4], 7)} (impossible)")
+    Console.Println("ways to pay 100 with 1,5,10,25,50: ${waysToPay([1, 5, 10, 25, 50], 100)}")
+    Console.Println("ways to pay 10 with 2,5,3,6: ${waysToPay([2, 5, 3, 6], 10)}")
+
+    Console.Println("longest increasing subsequence: ${longestIncreasing([10, 9, 2, 5, 3, 7, 101, 18])}")
+}

@@ -1,0 +1,5 @@
+[package]
+name = "Mandelbrot"
+version = "0.4.1"
+kind = "bin"
+zevic = ">=0.4"

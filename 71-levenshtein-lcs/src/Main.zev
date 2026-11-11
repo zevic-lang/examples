@@ -1,0 +1,124 @@
+// Comparing strings: the edit distance (Levenshtein), the longest common subsequence and a diff built from it.
+// Shows: a 2D table in a flat array, working on characters (not bytes) with Text.ToChars, and tracing back
+// through a table to recover the answer.
+// Library: Zevic.Console, Zevic.Text.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+// The fewest single-character insertions, deletions and substitutions that turn `a` into `b`.
+fn distance(a: String, b: String) -> I64 {
+    let x: Array<Char> = Text.ToChars(a)
+    let y: Array<Char> = Text.ToChars(b)
+    let w: I64 = y.Len() + 1
+    mut d: Array<I64> = Array<I64>.Repeat(0, (x.Len() + 1) * w)
+    for (i in 0..=x.Len()) { d[i * w] = i }
+    for (j in 0..=y.Len()) { d[j] = j }
+    for (i in 1..=x.Len()) {
+        for (j in 1..=y.Len()) {
+            let cost: I64 = if (x[i - 1] == y[j - 1]) { 0 } else { 1 }
+            mut best: I64 = d[(i - 1) * w + j] + 1
+            let insert: I64 = d[i * w + j - 1] + 1
+            let replace: I64 = d[(i - 1) * w + j - 1] + cost
+            if (insert < best) { best = insert }
+            if (replace < best) { best = replace }
+            d[i * w + j] = best
+        }
+    }
+    d[x.Len() * w + y.Len()]
+}
+
+// The table of common subsequence lengths: t[i * w + j] is the answer for the first i and j characters.
+fn lcsTable(x: Array<Char>, y: Array<Char>) -> Array<I64> {
+    let w: I64 = y.Len() + 1
+    mut t: Array<I64> = Array<I64>.Repeat(0, (x.Len() + 1) * w)
+    for (i in 1..=x.Len()) {
+        for (j in 1..=y.Len()) {
+            if (x[i - 1] == y[j - 1]) {
+                t[i * w + j] = t[(i - 1) * w + j - 1] + 1
+            } else {
+                let up: I64 = t[(i - 1) * w + j]
+                let left: I64 = t[i * w + j - 1]
+                t[i * w + j] = if (up > left) { up } else { left }
+            }
+        }
+    }
+    t
+}
+
+fn lcs(a: String, b: String) -> String {
+    let x: Array<Char> = Text.ToChars(a)
+    let y: Array<Char> = Text.ToChars(b)
+    let w: I64 = y.Len() + 1
+    let t: Array<I64> = lcsTable(x, y)
+    // Trace back from the corner, collecting the characters that matched.
+    mut out: Array<Char> = []
+    mut i: I64 = x.Len()
+    mut j: I64 = y.Len()
+    while (i > 0 && j > 0) {
+        if (x[i - 1] == y[j - 1]) {
+            out.Push(x[i - 1])
+            i -= 1
+            j -= 1
+        } else if (t[(i - 1) * w + j] >= t[i * w + j - 1]) {
+            i -= 1
+        } else {
+            j -= 1
+        }
+    }
+    Text.FromChars(out.Reversed())
+}
+
+// A line diff: "  " for common lines, "- " for removed ones and "+ " for added ones.
+fn diff(a: Array<String>, b: Array<String>) -> Array<String> {
+    let w: I64 = b.Len() + 1
+    mut t: Array<I64> = Array<I64>.Repeat(0, (a.Len() + 1) * w)
+    for (i in 1..=a.Len()) {
+        for (j in 1..=b.Len()) {
+            if (a[i - 1] == b[j - 1]) {
+                t[i * w + j] = t[(i - 1) * w + j - 1] + 1
+            } else {
+                let up: I64 = t[(i - 1) * w + j]
+                let left: I64 = t[i * w + j - 1]
+                t[i * w + j] = if (up > left) { up } else { left }
+            }
+        }
+    }
+    mut out: Array<String> = []
+    mut i: I64 = a.Len()
+    mut j: I64 = b.Len()
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && a[i - 1] == b[j - 1]) {
+            out.Push("  ${a[i - 1]}")
+            i -= 1
+            j -= 1
+        } else if (j > 0 && (i == 0 || t[i * w + j - 1] >= t[(i - 1) * w + j])) {
+            out.Push("+ ${b[j - 1]}")
+            j -= 1
+        } else {
+            out.Push("- ${a[i - 1]}")
+            i -= 1
+        }
+    }
+    out.Reversed()
+}
+
+fn Main() {
+    let pairs: Array<(String, String)> = [("kitten", "sitting"), ("flaw", "lawn"), ("", "abc"), ("same", "same"), ("日本語", "日本人")]
+    for (p in pairs) {
+        let (a, b): (String, String) = p
+        Console.Println("distance(\"${a}\", \"${b}\") = ${distance(a, b)}")
+    }
+
+    Console.Println("lcs of AGGTAB and GXTXAYB: ${lcs("AGGTAB", "GXTXAYB")}")
+    Console.Println("lcs of ABCBDAB and BDCABA has length ${Text.ToChars(lcs("ABCBDAB", "BDCABA")).Len()}")
+    Console.Println("lcs of abc and xyz: [${lcs("abc", "xyz")}]")
+
+    let before: Array<String> = ["one", "two", "three", "four"]
+    let after: Array<String> = ["one", "three", "four", "five"]
+    for (line in diff(before, after)) {
+        Console.Println(line)
+    }
+}

@@ -1,0 +1,126 @@
+// Matrices as a small struct: construction, multiplication, transpose, the determinant and powers.
+// Shows: a struct with an array inside, operators written as methods, and exact integer arithmetic.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+struct Matrix {
+    Rows: I64
+    Cols: I64
+    Data: Array<I64>
+
+    fn Init(rows: I64, cols: I64, data: Array<I64>) {
+        this.Rows = rows
+        this.Cols = cols
+        this.Data = data
+    }
+
+    fn At(r: I64, c: I64) -> I64 { this.Data[r * this.Cols + c] }
+
+    fn Mul(o: Matrix) -> Matrix {
+        mut data: Array<I64> = []
+        for (r in 0..this.Rows) {
+            for (c in 0..o.Cols) {
+                mut sum: I64 = 0
+                for (k in 0..this.Cols) {
+                    sum += this.At(r, k) * o.At(k, c)
+                }
+                data.Push(sum)
+            }
+        }
+        Matrix.New(this.Rows, o.Cols, data)
+    }
+
+    fn Transpose() -> Matrix {
+        mut data: Array<I64> = []
+        for (c in 0..this.Cols) {
+            for (r in 0..this.Rows) {
+                data.Push(this.At(r, c))
+            }
+        }
+        Matrix.New(this.Cols, this.Rows, data)
+    }
+
+    // The matrix without row `r` and column `c`.
+    fn Minor(r: I64, c: I64) -> Matrix {
+        mut data: Array<I64> = []
+        for (i in 0..this.Rows) {
+            for (j in 0..this.Cols) {
+                if (i != r && j != c) { data.Push(this.At(i, j)) }
+            }
+        }
+        Matrix.New(this.Rows - 1, this.Cols - 1, data)
+    }
+
+    // Laplace expansion along the first row (fine for small matrices).
+    fn Det() -> I64 {
+        if (this.Rows == 1) { return this.At(0, 0) }
+        mut total: I64 = 0
+        mut sign: I64 = 1
+        for (c in 0..this.Cols) {
+            total += sign * this.At(0, c) * this.Minor(0, c).Det()
+            sign = -sign
+        }
+        total
+    }
+
+    // m^n by repeated squaring.
+    fn Pow(n: I64) -> Matrix {
+        mut result: Matrix = Identity(this.Rows)
+        mut base: Matrix = this
+        mut e: I64 = n
+        while (e > 0) {
+            if (e % 2 == 1) { result = result.Mul(base) }
+            base = base.Mul(base)
+            e = e / 2
+        }
+        result
+    }
+
+    fn Show(label: String) {
+        Console.Println("${label} (${this.Rows}x${this.Cols}):")
+        for (r in 0..this.Rows) {
+            mut cells: Array<String> = []
+            for (c in 0..this.Cols) {
+                cells.Push(Text.PadLeft("${this.At(r, c)}", 5, ' '))
+            }
+            Console.Println("  ${cells.Join("")}")
+        }
+    }
+}
+
+// The n x n identity matrix: ones on the diagonal.
+fn Identity(n: I64) -> Matrix {
+    mut data: Array<I64> = []
+    for (r in 0..n) {
+        for (c in 0..n) {
+            data.Push(if (r == c) { 1 } else { 0 })
+        }
+    }
+    Matrix.New(n, n, data)
+}
+
+fn Main() {
+    let a: Matrix = Matrix.New(2, 3, [1, 2, 3, 4, 5, 6])
+    let b: Matrix = Matrix.New(3, 2, [7, 8, 9, 10, 11, 12])
+    a.Show("a")
+    b.Show("b")
+    a.Mul(b).Show("a * b")
+    b.Mul(a).Show("b * a")
+    a.Transpose().Show("transpose of a")
+
+    let m: Matrix = Matrix.New(3, 3, [2, 0, 1, 1, 3, 2, 1, 1, 4])
+    Console.Println("det = ${m.Det()}")
+    Console.Println("det of the identity = ${Identity(4).Det()}")
+    Console.Println("det of a singular matrix = ${Matrix.New(2, 2, [1, 2, 2, 4]).Det()}")
+    Console.Println("det(a * b) = ${a.Mul(b).Det()}")
+
+    // Powers of [[1, 1], [1, 0]] are Fibonacci numbers.
+    let fib: Matrix = Matrix.New(2, 2, [1, 1, 1, 0])
+    fib.Pow(10).Show("fib^10")
+    Console.Println("fib(50) = ${fib.Pow(50).At(0, 1)}")
+    Console.Println("fib(60) = ${fib.Pow(60).At(0, 1)}")
+}

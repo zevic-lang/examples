@@ -1,0 +1,7 @@
+knapsack of 200: value 510 with map, compass, sandwich, glucose, tin, banana
+knapsack of 20: value 150 with map
+fewest coins for 63 with 1,5,10,21,25: 3
+fewest coins for 7 with 2,4: -1 (impossible)
+ways to pay 100 with 1,5,10,25,50: 292
+ways to pay 10 with 2,5,3,6: 5
+longest increasing subsequence: 4

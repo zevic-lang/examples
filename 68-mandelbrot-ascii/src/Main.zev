@@ -1,0 +1,53 @@
+// The Mandelbrot set as ASCII art. The arithmetic is fixed-point integers (1.0 = 4096), not floating point,
+// so the picture is identical on every processor.
+// Shows: nested loops, integer math with a scale factor, and picking a character from a palette.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+import Zevic.Text
+
+let Scale: I64 = 4096
+let MaxIter: I64 = 60
+
+// How many steps z -> z*z + c takes to leave the circle of radius 2 (MaxIter when it never does).
+fn Escape(cr: I64, ci: I64) -> I64 {
+    mut zr: I64 = 0
+    mut zi: I64 = 0
+    mut n: I64 = 0
+    while (n < MaxIter) {
+        let zr2: I64 = zr * zr / Scale
+        let zi2: I64 = zi * zi / Scale
+        if (zr2 + zi2 > 4 * Scale) { return n }
+        zi = 2 * zr * zi / Scale + ci
+        zr = zr2 - zi2 + cr
+        n += 1
+    }
+    MaxIter
+}
+
+fn Main() {
+    // Darker for slow escapes; '@' is inside the set.
+    let palette: String = " .:-=+*#%"
+    let width: I64 = 64
+    let height: I64 = 24
+    mut inside: I64 = 0
+    for (row in 0..height) {
+        mut line: StringBuilder = StringBuilder.New()
+        for (col in 0..width) {
+            // x runs over [-2.2, 1.0], y over [-1.2, 1.2].
+            let cr: I64 = (-22 * Scale / 10) + col * (32 * Scale / 10) / (width - 1)
+            let ci: I64 = (-12 * Scale / 10) + row * (24 * Scale / 10) / (height - 1)
+            let n: I64 = Escape(cr, ci)
+            if (n == MaxIter) {
+                line.Append("@")
+                inside += 1
+            } else {
+                line.AppendChar(Text.CharAt(palette, n * 8 / MaxIter).Unwrap())
+            }
+        }
+        Console.Println(line.ToString())
+    }
+    Console.Println("${inside} of ${width * height} points are in the set")
+}

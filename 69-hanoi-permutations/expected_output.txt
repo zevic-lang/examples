@@ -1,0 +1,9 @@
+3 discs: 7 moves: A->C A->B C->B A->C B->A B->C A->C
+1 discs need 1 moves (2^1 - 1 = 1)
+5 discs need 31 moves (2^5 - 1 = 31)
+10 discs need 1023 moves (2^10 - 1 = 1023)
+20 discs need 1048575 moves (2^20 - 1 = 1048575)
+permutations of abc: abc acb bac bca cab cba
+permutations of 1234: 24, first 1234, last 4321
+2 of abcd: ab ac ad bc bd cd
+subsets of 5 items by size: 1 5 10 10 5 1 (Pascal's row)

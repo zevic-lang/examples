@@ -1,0 +1,13 @@
+distance("kitten", "sitting") = 3
+distance("flaw", "lawn") = 2
+distance("", "abc") = 3
+distance("same", "same") = 0
+distance("日本語", "日本人") = 1
+lcs of AGGTAB and GXTXAYB: GTAB
+lcs of ABCBDAB and BDCABA has length 4
+lcs of abc and xyz: []
+  one
+- two
+  three
+  four
++ five

@@ -1,0 +1,97 @@
+// Conway's Game of Life on a small grid that wraps around its edges. A glider walks across the board and
+// returns to where it started; a blinker flips between two shapes.
+// Shows: a 2D grid in a flat array, modular arithmetic for wrap-around, and building pictures with StringBuilder.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+class Grid {
+    Width: I64
+    Height: I64
+    cells: Array<Bool>
+
+    fn Init(width: I64, height: I64, picture: Array<String>) {
+        this.Width = width
+        this.Height = height
+        mut cells: Array<Bool> = Array<Bool>.Repeat(false, width * height)
+        // '#' is alive; anything else is dead.
+        for (r in 0..picture.Len()) {
+            let line: String = picture[r]
+            for (c in 0..line.Len()) {
+                if (line.ByteAt(c) == b'#') { cells[r * width + c] = true }
+            }
+        }
+        this.cells = cells
+    }
+
+    fn Alive(r: I64, c: I64) -> Bool {
+        // Add the size before % so that -1 wraps to the last row or column.
+        this.cells[((r + this.Height) % this.Height) * this.Width + (c + this.Width) % this.Width]
+    }
+
+    fn Neighbours(r: I64, c: I64) -> I64 {
+        mut n: I64 = 0
+        for (dr in -1..=1) {
+            for (dc in -1..=1) {
+                if ((dr != 0 || dc != 0) && this.Alive(r + dr, c + dc)) { n += 1 }
+            }
+        }
+        n
+    }
+
+    // The next generation: a live cell with 2 or 3 neighbours survives; a dead cell with exactly 3 is born.
+    fn Step() -> Grid {
+        mut next: Grid = Grid.New(this.Width, this.Height, [])
+        for (r in 0..this.Height) {
+            for (c in 0..this.Width) {
+                let n: I64 = this.Neighbours(r, c)
+                let alive: Bool = if (this.Alive(r, c)) { n == 2 || n == 3 } else { n == 3 }
+                next.cells[r * this.Width + c] = alive
+            }
+        }
+        next
+    }
+
+    fn Population() -> I64 { this.cells.Filter((b: Bool) => b).Len() }
+
+    fn Show() {
+        for (r in 0..this.Height) {
+            mut line: StringBuilder = StringBuilder.New()
+            for (c in 0..this.Width) {
+                line.Append(if (this.Alive(r, c)) { "#" } else { "." })
+            }
+            Console.Println(line.ToString())
+        }
+    }
+
+    fn Equals(o: Grid) -> Bool { this.cells == o.cells }
+}
+
+fn Main() {
+    // A blinker has period 2.
+    let blinker: Grid = Grid.New(5, 5, [".....", "..#..", "..#..", "..#..", "....."])
+    Console.Println("blinker, generation 0 (population ${blinker.Population()}):")
+    blinker.Show()
+    let b1: Grid = blinker.Step()
+    Console.Println("generation 1:")
+    b1.Show()
+    Console.Println("back after two steps: ${b1.Step().Equals(blinker)}")
+
+    // A glider moves one cell diagonally every 4 generations, so on a 6x6 torus it repeats after 24.
+    let glider: Grid = Grid.New(6, 6, [".#....", "..#...", "###...", "......", "......", "......"])
+    mut g: Grid = glider
+    for (gen in 1..=24) {
+        g = g.Step()
+        if (gen == 4 || gen == 8) {
+            Console.Println("glider after ${gen} generations:")
+            g.Show()
+        }
+    }
+    Console.Println("after 24 generations: same as the start ${g.Equals(glider)}, population ${g.Population()}")
+
+    // A block never changes.
+    let block: Grid = Grid.New(4, 4, ["....", ".##.", ".##.", "...."])
+    Console.Println("block is still: ${block.Step().Equals(block)}")
+}

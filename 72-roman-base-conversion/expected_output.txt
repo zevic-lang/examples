@@ -1,0 +1,24 @@
+1 = I
+4 = IV
+9 = IX
+14 = XIV
+40 = XL
+90 = XC
+400 = CD
+1994 = MCMXCIV
+2026 = MMXXVI
+3999 = MMMCMXCIX
+0 = true, 4000 = true
+"MCMXCIV" -> 1994
+"MMXXVI" -> 2026
+"XLII" -> 42
+"IIII" -> error: IIII is not written canonically (IV)
+"VX" -> error: VX is not written canonically (V)
+"ABC" -> error: 'A' is not a Roman digit
+"" -> error: empty numeral
+all 3999 numerals survive a round trip: true
+255 in base 2, 8, 16, 36: 11111111 377 ff 73
+same with Format: ff 377
+ff in base 16: 255, 1010 in base 2: 10, zz in base 36: 1295
+12 in base 2: error: '2' is too big for base 2, 1g in base 16: error: 'g' is too big for base 16
+round trip of 123456789 through base 36: 123456789

@@ -1,0 +1,80 @@
+// Three classic recursive problems: the Towers of Hanoi, all permutations of a list, and all
+// combinations ("n choose k") of a list.
+// Shows: recursion with a growing result, passing `mut` arrays down, and backtracking.
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+// Move n discs from `from` to `to` using `via`; every move is appended to `moves`.
+fn hanoi(n: I64, from: String, to: String, via: String, mut moves: Array<String>) {
+    if (n == 0) { return }
+    hanoi(n - 1, from, via, to, moves)
+    moves.Push("${from}->${to}")
+    hanoi(n - 1, via, to, from, moves)
+}
+
+// Every ordering of `items`. `chosen` is the prefix built so far, `used` marks the items taken.
+fn permute(items: Array<String>, mut chosen: Array<String>, mut used: Array<Bool>, mut out: Array<String>) {
+    if (chosen.Len() == items.Len()) {
+        out.Push(chosen.Join(""))
+        return
+    }
+    for (i in 0..items.Len()) {
+        if (used[i]) { continue }
+        used[i] = true
+        chosen.Push(items[i])
+        permute(items, chosen, used, out)
+        let _last: String = chosen.Pop().Unwrap()
+        used[i] = false
+    }
+}
+
+// Every way to choose k items, keeping the original order.
+fn combine(items: Array<String>, k: I64, start: I64, mut chosen: Array<String>, mut out: Array<String>) {
+    if (chosen.Len() == k) {
+        out.Push(chosen.Join(""))
+        return
+    }
+    for (i in start..items.Len()) {
+        chosen.Push(items[i])
+        combine(items, k, i + 1, chosen, out)
+        let _last: String = chosen.Pop().Unwrap()
+    }
+}
+
+fn hanoiDemo() {
+    mut moves: Array<String> = []
+    hanoi(3, "A", "C", "B", moves)
+    Console.Println("3 discs: ${moves.Len()} moves: ${moves.Join(" ")}")
+    for (n in [1, 5, 10, 20]) {
+        mut m: Array<String> = []
+        hanoi(n, "A", "C", "B", m)
+        Console.Println("${n} discs need ${m.Len()} moves (2^${n} - 1 = ${(1 << n.ToI32Wrap()) - 1})")
+    }
+}
+
+fn Main() {
+    hanoiDemo()
+
+    mut perms: Array<String> = []
+    let letters: Array<String> = ["a", "b", "c"]
+    permute(letters, [], Array<Bool>.Repeat(false, 3), perms)
+    Console.Println("permutations of abc: ${perms.Join(" ")}")
+
+    mut more: Array<String> = []
+    permute(["1", "2", "3", "4"], [], Array<Bool>.Repeat(false, 4), more)
+    Console.Println("permutations of 1234: ${more.Len()}, first ${more[0]}, last ${more[more.Len() - 1]}")
+
+    mut pairs: Array<String> = []
+    combine(["a", "b", "c", "d"], 2, 0, [], pairs)
+    Console.Println("2 of abcd: ${pairs.Join(" ")}")
+    mut counts: Array<String> = []
+    for (k in 0..=5) {
+        mut c: Array<String> = []
+        combine(["a", "b", "c", "d", "e"], k, 0, [], c)
+        counts.Push("${c.Len()}")
+    }
+    Console.Println("subsets of 5 items by size: ${counts.Join(" ")} (Pascal's row)")
+}
