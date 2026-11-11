@@ -5,7 +5,7 @@ arguments: 3
 same as Env.RawArgs: true
 unset: true
 set: hello
-empty but set: true
+set again: world
 absolute working directory: true
 absolute program path: true
 known system: true

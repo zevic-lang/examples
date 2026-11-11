@@ -20,8 +20,10 @@ fn Main(args: Array<String>) {
     Console.Println("unset: ${Env.Get("ZEVIC_EXAMPLE_NOT_SET").IsNone()}")
     Env.Set("ZEVIC_EXAMPLE", "hello").Unwrap()
     Console.Println("set: ${Env.Get("ZEVIC_EXAMPLE").Unwrap()}")
-    Env.Set("ZEVIC_EXAMPLE", "").Unwrap()
-    Console.Println("empty but set: ${Env.Get("ZEVIC_EXAMPLE").IsSome()}")
+    // Setting it again replaces the value. (An empty value is not used here: on Windows an empty
+    // variable does not exist, so the result would depend on the system.)
+    Env.Set("ZEVIC_EXAMPLE", "world").Unwrap()
+    Console.Println("set again: ${Env.Get("ZEVIC_EXAMPLE").Unwrap()}")
 
     // Where the program runs.
     Console.Println("absolute working directory: ${Path.IsAbsolute(Env.CurrentDir())}")
