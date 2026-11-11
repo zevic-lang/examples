@@ -11,5 +11,5 @@ word counts: and=2 bat=1 cat=1 hat=1 the=3
 after Extend: five=5 four=4 one=-1 three=3 two=2
 RemoveWhere removed 1
 what is left: one=-1 three=3 two=2
-empty after Clear: true
+not empty before Clear: true
 size 0

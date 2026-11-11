@@ -37,9 +37,9 @@ for dir in "$ROOT"/[0-9]*/; do
         if [ -f run.sh ]; then
             ZEVIC="$ZEVIC" sh run.sh "$ZEVIC"
         else
-            srcs=$(find src -name '*.zev' | sort)
+            srcs=$(find src -name '*.zev' | LC_ALL=C sort)
             native=""
-            [ -d native ] && native=$(find native \( -name '*.c' -o -name '*.cpp' \) | sort)
+            [ -d native ] && native=$(find native \( -name '*.c' -o -name '*.cpp' \) | LC_ALL=C sort)
             flags=""
             [ -f mode ] && grep -q test mode && flags="--test"
             # shellcheck disable=SC2086
@@ -56,15 +56,16 @@ for dir in "$ROOT"/[0-9]*/; do
     ) > "$out" 2> "$TMP/$name.err"
     code=$?
     tr -d '\r' < "$out" > "$out.n"
+    tr -d '\r' < "$dir/expected_output.txt" > "$out.e" 2>/dev/null
     if [ $UPDATE = 1 ] && [ $code = 0 ]; then
         cp "$out.n" "$dir/expected_output.txt"
         echo "updated $name"; pass=$((pass + 1)); continue
     fi
-    if [ $code = 0 ] && cmp -s "$out.n" "$dir/expected_output.txt"; then
+    if [ $code = 0 ] && cmp -s "$out.n" "$out.e"; then
         echo "ok    $name"; pass=$((pass + 1))
     else
         echo "FAIL  $name (exit $code)"; fail=$((fail + 1)); failed="$failed $name"
-        diff "$dir/expected_output.txt" "$out.n" 2>/dev/null | head -8
+        diff "$out.e" "$out.n" 2>/dev/null | head -8
         head -8 "$TMP/$name.err"
     fi
 done
