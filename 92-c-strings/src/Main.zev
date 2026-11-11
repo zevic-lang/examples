@@ -1,0 +1,50 @@
+// Strings across the C boundary. Zevic Strings are UTF-8 and GC-managed; C strings are NUL-terminated and
+// owned by whoever allocated them. This example walks through the rules:
+//   - s.ToC() is valid only for the duration of a call,
+//   - String.FromC(p) copies the bytes (and checks UTF-8), String.FromCLossy(p) repairs bad bytes,
+//   - memory that C malloc'ed is copied and then freed,
+//   - a string the C side keeps is duplicated with NewString and freed on the C side.
+//
+//   native/strs.c   a few C helpers: upper-casing, joining (malloc'ed result), a stored name, bad UTF-8
+//
+// Library: Zevic.Console.
+
+module Main
+
+import Zevic.Console
+
+extern "C" {
+    fn strlen(s: CString) -> CSizeT
+    fn strs_upper(s: CString) -> CString // returns a malloc'ed copy
+    fn strs_join(a: CString, b: CString) -> CString
+    fn strs_store(s: CString) -> CVoid // the C side keeps this string
+    fn strs_stored() -> CString
+    fn strs_release() -> CVoid
+    fn strs_broken() -> CString // not valid UTF-8
+    fn free(p: CString) -> CVoid // a CString is just a char*
+}
+
+fn Main() {
+    // 1. A temporary C string for a libc call.
+    let word: String = "héllo"
+    Console.Println("strlen(\"${word}\") = ${strlen(word.ToC()).ToU64()} bytes (UTF-8, so the é takes two)")
+
+    // 2. C allocates, Zevic copies, then frees.
+    let upper: CString = strs_upper("zevic".ToC())
+    Console.Println("upper = ${String.FromC(upper)}")
+    free(upper)
+
+    let joined: CString = strs_join("foo".ToC(), "bar".ToC())
+    Console.Println("joined = ${String.FromC(joined)}")
+    free(joined)
+
+    // 3. C keeps a string: give it its own copy outside the GC.
+    strs_store(NewString("kept by C"))
+    Console.Println("stored = ${String.FromC(strs_stored())}")
+    strs_release()
+
+    // 4. Invalid UTF-8 from C: the lossy conversion replaces bad bytes with U+FFFD.
+    let bad: CString = strs_broken()
+    Console.Println("lossy = ${String.FromCLossy(bad)}")
+    Console.Println("lossy length = ${String.FromCLossy(bad).Len()} bytes")
+}

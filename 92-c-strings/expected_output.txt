@@ -1,0 +1,6 @@
+strlen("héllo") = 6 bytes (UTF-8, so the é takes two)
+upper = ZEVIC
+joined = foobar
+stored = kept by C
+lossy = ok��!
+lossy length = 9 bytes
