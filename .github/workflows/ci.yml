@@ -1,0 +1,87 @@
+name: examples
+
+# Builds the Zevic compiler from the main repository, then builds and runs every example
+# and compares its output with expected_output.txt (on Linux, macOS and Windows).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  examples:
+    name: examples (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-x64, os: ubuntu-latest, exe: "", skip: "" }
+          - { name: macos-arm64, os: macos-latest, exe: "", skip: "" }
+          # the other-language hosts (93-96) link with -lpthread and POSIX toolchains: Linux and macOS only
+          - { name: windows-x64, os: windows-latest, exe: ".exe", skip: "93- 94- 95- 96-" }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: zevic-lang/zevic
+          path: zevic-src
+
+      - name: Install LLVM (Linux, apt)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+      - name: Install LLVM (Windows, winget)
+        if: runner.os == 'Windows'
+        run: |
+          if ! command -v clang >/dev/null 2>&1 && [ ! -x "/c/Program Files/LLVM/bin/clang.exe" ]; then
+            winget install --id LLVM.LLVM -e --silent --accept-package-agreements --accept-source-agreements
+          fi
+          echo "C:\\Program Files\\LLVM\\bin" >> "$GITHUB_PATH"
+      - name: Show clang version
+        run: clang --version
+
+      # the seed compiler comes from the committed LLVM IR with clang alone; it builds zevic and zevpm
+      - name: Build zevic and zevpm
+        working-directory: zevic-src
+        run: |
+          E="${{ matrix.exe }}"
+          export ZEVIC_HOME="$PWD"
+          mkdir -p build
+          sh tools/bootstrap-build.sh "build/zevic-seed$E"
+          "build/zevic-seed$E" $(ls tools/zevic1/src/*.zev | sort) -o "build/zevic$E"
+          "build/zevic$E" tools/zevpm/src/*.zev -o "build/zevpm$E"
+          "build/zevic$E" --version
+
+      - name: Rust and Go (Linux, for examples 95 and 96)
+        if: runner.os == 'Linux'
+        run: |
+          command -v rustc || echo "rustc not found: 95 prints its expected output"
+          command -v go || echo "go not found: 96 prints its expected output"
+
+      - name: Check the formatting
+        if: runner.os == 'Linux'
+        working-directory: zevic-src
+        run: |
+          "build/zevic" tools/zevfmt/src/*.zev -o build/zevfmt
+          cd .. && find . -name '*.zev' -not -path './zevic-src/*' | sort | xargs zevic-src/build/zevfmt -check
+
+      - name: Run the examples
+        env:
+          SKIP: ${{ matrix.skip }}
+        run: |
+          export ZEVIC_HOME="$PWD/zevic-src"
+          export ZEVIC="$ZEVIC_HOME/build/zevic${{ matrix.exe }}"
+          sh run-all.sh

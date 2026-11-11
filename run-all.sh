@@ -4,6 +4,7 @@
 #   ./run-all.sh                  all examples
 #   ./run-all.sh 12 json          only the folders whose name contains one of the words
 #   ./run-all.sh --update [...]   write expected_output.txt from the current output (check the diff!)
+#   SKIP="93 96" ./run-all.sh      leave out the folders whose name contains one of these words
 #
 # The compiler is $ZEVIC (default: zevic on PATH). A folder is a package: zevic.toml, src/**/*.zev,
 # optional native/*.c|*.cpp (linked in), optional args.txt (program arguments on one line) and
@@ -26,6 +27,8 @@ for dir in "$ROOT"/[0-9]*/; do
         hit=0; for w in "$@"; do case "$name" in *"$w"*) hit=1 ;; esac; done
         [ $hit = 1 ] || continue
     fi
+    skip=0; for w in ${SKIP:-}; do case "$name" in *"$w"*) skip=1 ;; esac; done
+    if [ $skip = 1 ]; then echo "skip  $name"; continue; fi
     work="$TMP/$name"
     rm -rf "$work"; cp -R "$dir" "$work"
     out="$TMP/$name.out"
