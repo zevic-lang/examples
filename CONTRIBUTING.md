@@ -4,7 +4,7 @@ An example is a folder `NN-topic/` (two digits, lower-case words joined by `-`) 
 
 ```
 NN-topic/
-  zevic.toml            name = "PascalCase", version = "0.4.1", kind = "bin", zevic = ">=0.4"
+  zevic.toml            name = "PascalCase", version = "0.4.6", kind = "bin", zevic = ">=0.4"
   src/Main.zev          module Main, public fn Main(); more files under src/ are fine
   native/*.c|*.cpp      optional: C or C++ files that are linked in
   args.txt              optional: program arguments, one line
