@@ -40,8 +40,8 @@ fn square(i: CInt) -> CInt {
 }
 
 class Collector {
-    name: String
-    seen: Array<I32> = []
+    mut name: String
+    mut seen: Array<I32> = []
 
     fn Init(name: String) {
         this.name = name

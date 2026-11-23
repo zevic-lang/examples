@@ -8,11 +8,11 @@ module Main
 import Zevic.Console
 
 class LruCache<V> {
-    capacity: I64
-    values: Map<String, V> = Map.New()
-    order: Array<String> = []
-    hits: I64 = 0
-    misses: I64 = 0
+    mut capacity: I64
+    mut values: Map<String, V> = Map.New()
+    mut order: Array<String> = []
+    mut hits: I64 = 0
+    mut misses: I64 = 0
 
     fn Init(capacity: I64) {
         this.capacity = capacity

@@ -8,9 +8,9 @@ module Main
 import Zevic.Console
 
 struct Item {
-    Name: String
-    Weight: I64
-    Value: I64
+    mut Name: String
+    mut Weight: I64
+    mut Value: I64
 
     fn Init(name: String, weight: I64, value: I64) {
         this.Name = name

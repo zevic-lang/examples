@@ -10,8 +10,8 @@ import Zevic.Csv
 import Zevic.Text
 
 struct Total {
-    Orders: I64
-    Cents: I64
+    mut Orders: I64
+    mut Cents: I64
 
     fn Init(orders: I64, cents: I64) {
         this.Orders = orders

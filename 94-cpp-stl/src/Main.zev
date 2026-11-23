@@ -30,7 +30,7 @@ extern "C" {
 }
 
 class WordCounter {
-    id: CLong = 0
+    mut id: CLong = 0
 
     fn Init() {
         this.id = wc_new()
@@ -44,7 +44,7 @@ class WordCounter {
 }
 
 class MaxHeap {
-    id: CLong = 0
+    mut id: CLong = 0
 
     fn Init() {
         this.id = pq_new()

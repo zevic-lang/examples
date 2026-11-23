@@ -9,8 +9,8 @@ import Zevic.Console
 
 // A heap entry: a node and the distance it was queued with.
 struct Entry {
-    Node: I64
-    Dist: I64
+    mut Node: I64
+    mut Dist: I64
 
     fn Init(node: I64, dist: I64) {
         this.Node = node
@@ -20,7 +20,7 @@ struct Entry {
 
 // A binary min-heap stored in an array: the children of i are 2i+1 and 2i+2.
 class MinHeap {
-    items: Array<Entry> = []
+    mut items: Array<Entry> = []
 
     fn Len() -> I64 { this.items.Len() }
 
@@ -59,8 +59,8 @@ class MinHeap {
 }
 
 struct Edge {
-    To: I64
-    Weight: I64
+    mut To: I64
+    mut Weight: I64
 
     fn Init(to: I64, weight: I64) {
         this.To = to

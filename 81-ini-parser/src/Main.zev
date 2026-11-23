@@ -9,8 +9,8 @@ import Zevic.Console
 import Zevic.Text
 
 class Ini {
-    sections: Map<String, Map<String, String>> = Map.New()
-    order: Array<String> = []
+    mut sections: Map<String, Map<String, String>> = Map.New()
+    mut order: Array<String> = []
 
     fn Sections() -> Array<String> { this.order }
 

@@ -10,8 +10,8 @@ import Zevic.Console
 import Zevic.Text
 
 struct Response {
-    Status: I64
-    Body: String
+    mut Status: I64
+    mut Body: String
 
     fn Init(status: I64, body: String) {
         this.Status = status
@@ -20,9 +20,9 @@ struct Response {
 }
 
 struct Route {
-    Method: String
-    Parts: Array<String>
-    Handler: fn(Map<String, String>) -> Response
+    mut Method: String
+    mut Parts: Array<String>
+    mut Handler: fn(Map<String, String>) -> Response
 
     fn Init(method: String, pattern: String, handler: fn(Map<String, String>) -> Response) {
         this.Method = method
@@ -37,7 +37,7 @@ fn segments(path: String) -> Array<String> {
 }
 
 class Router {
-    routes: Array<Route> = []
+    mut routes: Array<Route> = []
 
     mut fn Add(method: String, pattern: String, handler: fn(Map<String, String>) -> Response) {
         this.routes.Push(Route.New(method, pattern, handler))

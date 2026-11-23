@@ -26,7 +26,7 @@ fn AreEqual<T: Equatable>(a: T, b: T) -> Bool {
 
 // A generic class.
 class Stack<T> {
-    items: Array<T> = []
+    mut items: Array<T> = []
 
     mut fn Push(x: T) { this.items.Push(x) }
     mut fn Pop() -> Option<T> { this.items.Pop() }
@@ -35,8 +35,8 @@ class Stack<T> {
 
 // A generic struct with two parameters.
 struct Pair<A, B> {
-    First: A
-    Second: B
+    mut First: A
+    mut Second: B
 
     fn Init(a: A, b: B) {
         this.First = a
@@ -50,7 +50,7 @@ struct Pair<A, B> {
 
 // A user type becomes Comparable by providing Equals and Compare.
 class Version : Comparable {
-    n: I32
+    mut n: I32
     fn Init(n: I32) { this.n = n }
     fn Equals(other: Version) -> Bool { this.n == other.n }
     fn Compare(other: Version) -> I32 { this.n - other.n }

@@ -15,9 +15,9 @@ enum Kind {
 }
 
 struct Event {
-    At: I64
-    Seq: I64
-    What: Kind
+    mut At: I64
+    mut Seq: I64
+    mut What: Kind
 
     fn Init(at: I64, seq: I64, what: Kind) {
         this.At = at
@@ -32,8 +32,8 @@ fn before(a: Event, b: Event) -> Bool {
 }
 
 class Queue {
-    items: Array<Event> = []
-    next: I64 = 0
+    mut items: Array<Event> = []
+    mut next: I64 = 0
 
     fn Len() -> I64 { this.items.Len() }
 

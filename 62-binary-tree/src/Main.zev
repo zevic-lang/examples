@@ -8,9 +8,9 @@ module Main
 import Zevic.Console
 
 class Node {
-    Value: I32
-    Left: Option<Node> = None
-    Right: Option<Node> = None
+    mut Value: I32
+    mut Left: Option<Node> = None
+    mut Right: Option<Node> = None
 
     fn Init(value: I32) {
         this.Value = value

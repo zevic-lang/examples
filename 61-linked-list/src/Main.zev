@@ -8,8 +8,8 @@ module Main
 import Zevic.Console
 
 class Node<T> {
-    Value: T
-    Next: Option<Node<T>> = None
+    mut Value: T
+    mut Next: Option<Node<T>> = None
 
     fn Init(value: T) {
         this.Value = value
@@ -17,7 +17,7 @@ class Node<T> {
 }
 
 class ListIter<T> : Iterator<T> {
-    cur: Option<Node<T>>
+    mut cur: Option<Node<T>>
 
     fn Init(start: Option<Node<T>>) { this.cur = start }
 
@@ -33,9 +33,9 @@ class ListIter<T> : Iterator<T> {
 }
 
 class LinkedList<T> : Iterable<T> {
-    head: Option<Node<T>> = None
-    tail: Option<Node<T>> = None
-    count: I64 = 0
+    mut head: Option<Node<T>> = None
+    mut tail: Option<Node<T>> = None
+    mut count: I64 = 0
 
     fn Len() -> I64 { this.count }
 

@@ -8,9 +8,9 @@ module Main
 import Zevic.Console
 
 class Grid {
-    Width: I64
-    Height: I64
-    cells: Array<Bool>
+    mut Width: I64
+    mut Height: I64
+    mut cells: Array<Bool>
 
     fn Init(width: I64, height: I64, picture: Array<String>) {
         this.Width = width

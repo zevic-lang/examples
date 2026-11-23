@@ -7,8 +7,8 @@ module Main
 import Zevic.Console
 
 struct PointV {
-    X: I32
-    Y: I32
+    mut X: I32
+    mut Y: I32
 
     fn Init(x: I32, y: I32) {
         this.X = x
@@ -19,8 +19,8 @@ struct PointV {
 }
 
 class PointR {
-    X: I32
-    Y: I32
+    mut X: I32
+    mut Y: I32
 
     fn Init(x: I32, y: I32) {
         this.X = x
