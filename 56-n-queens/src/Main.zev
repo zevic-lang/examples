@@ -10,13 +10,13 @@ import Zevic.Console
 import Zevic.Text
 
 class Solver {
-    n: I64
-    cols: Array<Bool>
-    diag1: Array<Bool> // row + col
-    diag2: Array<Bool> // row - col + n - 1
-    queens: Array<I64> // queens[row] = column
-    Count: I64 = 0
-    First: Array<I64> = []
+    mut n: I64
+    mut cols: Array<Bool>
+    mut diag1: Array<Bool> // row + col
+    mut diag2: Array<Bool> // row - col + n - 1
+    mut queens: Array<I64> // queens[row] = column
+    mut Count: I64 = 0
+    mut First: Array<I64> = []
 
     fn Init(n: I64) {
         this.n = n

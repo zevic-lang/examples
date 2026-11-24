@@ -8,9 +8,9 @@ import Zevic.Console
 import Zevic.Text
 
 struct Matrix {
-    Rows: I64
-    Cols: I64
-    Data: Array<I64>
+    mut Rows: I64
+    mut Cols: I64
+    mut Data: Array<I64>
 
     fn Init(rows: I64, cols: I64, data: Array<I64>) {
         this.Rows = rows

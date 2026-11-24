@@ -9,9 +9,9 @@ module Main
 import Zevic.Console
 
 class Account {
-    Owner: String
-    balance: I64 = 0
-    history: Array<String> = []
+    mut Owner: String
+    mut balance: I64 = 0
+    mut history: Array<String> = []
 
     fn Init(owner: String) {
         this.Owner = owner
@@ -44,7 +44,7 @@ class Account {
 }
 
 class Bank {
-    accounts: Map<String, Account> = Map.New()
+    mut accounts: Map<String, Account> = Map.New()
 
     mut fn Open(owner: String, opening: I64) -> Result<Account, Error> {
         if (this.accounts.Contains(owner)) {

@@ -8,13 +8,13 @@ import Zevic.Console
 import Zevic.Text
 
 class Node {
-    Children: Map<String, Node> = Map.New()
-    IsWord: Bool = false
+    mut Children: Map<String, Node> = Map.New()
+    mut IsWord: Bool = false
 }
 
 class Trie {
-    root: Node = Node.New()
-    count: I64 = 0
+    mut root: Node = Node.New()
+    mut count: I64 = 0
 
     fn Len() -> I64 { this.count }
 

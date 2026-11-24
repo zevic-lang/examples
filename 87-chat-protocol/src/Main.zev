@@ -34,8 +34,8 @@ fn parse(line: String) -> Result<Command, Error> {
 }
 
 class Server {
-    nicks: Map<String, String> = Map.New() // connection id -> nickname
-    rooms: Map<String, Array<String>> = Map.New()
+    mut nicks: Map<String, String> = Map.New() // connection id -> nickname
+    mut rooms: Map<String, Array<String>> = Map.New()
 
     fn nameOf(conn: String) -> Result<String, Error> {
         match (this.nicks.Get(conn)) {

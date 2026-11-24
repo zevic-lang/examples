@@ -8,9 +8,9 @@ module Main
 import Zevic.Console
 
 class DisjointSet {
-    parent: Array<I64> = []
-    size: Array<I64> = []
-    Groups: I64
+    mut parent: Array<I64> = []
+    mut size: Array<I64> = []
+    mut Groups: I64
 
     fn Init(n: I64) {
         for (i in 0..n) {

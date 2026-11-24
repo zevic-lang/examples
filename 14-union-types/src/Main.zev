@@ -7,7 +7,7 @@ module Main
 import Zevic.Console
 
 class ParseError {
-    Message: String
+    mut Message: String
     fn Init(message: String) { this.Message = message }
 }
 

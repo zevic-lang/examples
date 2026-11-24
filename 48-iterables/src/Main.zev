@@ -10,9 +10,9 @@ fn Show<T>(label: String, xs: Array<T>) {
 }
 
 struct Person {
-    Name: String
-    Age: I32
-    City: String
+    mut Name: String
+    mut Age: I32
+    mut City: String
 
     fn Init(name: String, age: I32, city: String) {
         this.Name = name

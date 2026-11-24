@@ -13,8 +13,8 @@ import Zevic.Path
 import Zevic.Text
 
 struct Todo {
-    Title: String
-    Done: Bool
+    mut Title: String
+    mut Done: Bool
 
     fn Init(title: String, done: Bool) {
         this.Title = title

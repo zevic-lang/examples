@@ -24,8 +24,8 @@ enum Event {
 }
 
 struct Outcome {
-    Next: State
-    Message: String
+    mut Next: State
+    mut Message: String
 
     fn Init(next: State, message: String) {
         this.Next = next

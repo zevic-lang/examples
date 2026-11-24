@@ -6,7 +6,7 @@ import Zevic.Console
 
 // Your own type works in for loops if it implements Iterable.
 class Countdown : Iterable<I32> {
-    from: I32
+    mut from: I32
 
     fn Init(from: I32) { this.from = from }
 
@@ -16,7 +16,7 @@ class Countdown : Iterable<I32> {
 }
 
 class CountdownIter : Iterator<I32> {
-    n: I32
+    mut n: I32
 
     fn Init(n: I32) { this.n = n }
 

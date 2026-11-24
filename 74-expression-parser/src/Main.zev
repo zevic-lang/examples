@@ -50,14 +50,14 @@ enum Expr {
 
 // A tree node: a reference to an Expr.
 class Node {
-    e: Expr
+    mut e: Expr
 
     fn Init(e: Expr) { this.e = e }
 }
 
 class Parser {
-    src: String
-    pos: I64 = 0
+    mut src: String
+    mut pos: I64 = 0
 
     fn Init(src: String) { this.src = src }
 

@@ -9,11 +9,11 @@ import Zevic.Console
 import Zevic.Text
 
 struct Item {
-    Sku: String
-    Name: String
-    Qty: I64
-    PriceCents: I64
-    ReorderAt: I64
+    mut Sku: String
+    mut Name: String
+    mut Qty: I64
+    mut PriceCents: I64
+    mut ReorderAt: I64
 
     fn Init(sku: String, name: String, qty: I64, priceCents: I64, reorderAt: I64) {
         this.Sku = sku
@@ -30,7 +30,7 @@ fn money(cents: I64) -> String {
 }
 
 class Inventory {
-    items: Map<String, Item> = Map.New()
+    mut items: Map<String, Item> = Map.New()
 
     mut fn Add(item: Item) {
         this.items.Set(item.Sku, item)

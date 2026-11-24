@@ -8,8 +8,8 @@ import Zevic.Math
 
 // struct: a value type. Assignment copies it. == compares the fields.
 struct Point {
-    X: F64
-    Y: F64
+    mut X: F64
+    mut Y: F64
 
     fn Init(x: F64, y: F64) {
         this.X = x
@@ -32,8 +32,8 @@ interface Describable {
 
 // class: a reference type. Lower-case fields are private to the module.
 class Person : Describable {
-    name: String
-    Age: I32
+    mut name: String
+    mut Age: I32
 
     fn Init(name: String, age: I32) {
         this.name = name
@@ -75,7 +75,7 @@ enum Shape : Describable {
 
 // A generic class.
 class Stack<T> {
-    items: Array<T> = []
+    mut items: Array<T> = []
 
     mut fn Push(x: T) { this.items.Push(x) }
     mut fn Pop() -> Option<T> { this.items.Pop() }

@@ -7,8 +7,8 @@ module Main
 import Zevic.Console
 
 class PriorityQueue<T> {
-    items: Array<T> = []
-    before: fn(T, T) -> Bool
+    mut items: Array<T> = []
+    mut before: fn(T, T) -> Bool
 
     // `before(a, b)` says that a must come out before b.
     fn Init(before: fn(T, T) -> Bool) {
@@ -59,8 +59,8 @@ class PriorityQueue<T> {
 }
 
 struct Task {
-    Name: String
-    Priority: I32
+    mut Name: String
+    mut Priority: I32
 
     fn Init(name: String, priority: I32) {
         this.Name = name
