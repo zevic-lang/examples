@@ -82,7 +82,7 @@ The examples in `90`-`96` also use a C, C++, Rust or Go toolchain when one is in
 | `29-cli` | command-line parsing |
 | `30-regex` | regular expressions |
 | `31-csv` `32-toml` `33-json` | data formats |
-| `34-tcp-echo` `35-udp` `36-http-loopback` | networking on the loopback interface |
+| `34-tcp-echo` `35-udp` `36-http-by-hand` | networking on the loopback interface |
 | `37-async-channels` `38-mutex-counter` | tasks, channels, mutexes |
 | `39-random-seeded` `40-time-measure` | random numbers, durations |
 | `41-process` `42-env` | running programs, the environment |
