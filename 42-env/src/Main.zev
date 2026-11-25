@@ -28,7 +28,7 @@ fn Main(args: Array<String>) {
     // Where the program runs.
     Console.Println("absolute working directory: ${Path.IsAbsolute(Env.CurrentDir())}")
     Console.Println("absolute program path: ${Path.IsAbsolute(Env.ExePath())}")
-    let os: String = Env.OS()
+    let os: String = Env.Os()
     Console.Println("known system: ${os == "linux" || os == "macos" || os == "windows"}")
     Console.Println("IsWindows agrees: ${Env.IsWindows() == (os == "windows")}")
 

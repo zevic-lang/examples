@@ -2,4 +2,4 @@
 name = "Greeter"
 version = "0.2.0"
 kind = "lib"
-zevic = ">=0.4"
+zevic = ">=0.5"

@@ -1,7 +1,7 @@
 # Zevic examples
 
 Sample programs for the [Zevic](https://github.com/zevic-lang/zevic) language: 96 small, complete packages that
-build with the current compiler (0.4.x) and print the same output on Linux, macOS and Windows. Each folder has an
+build with the current compiler (0.5.x) and print the same output on Linux, macOS and Windows. Each folder has an
 `expected_output.txt`, and CI runs every example and compares the output.
 
 Each folder is a package in the layout that `zevpm new` creates:
