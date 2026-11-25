@@ -1,5 +1,5 @@
 [package]
-name = "HttpLoopback"
+name = "HttpByHand"
 version = "0.5.0"
 kind = "bin"
 zevic = ">=0.5"

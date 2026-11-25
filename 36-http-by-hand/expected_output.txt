@@ -1,0 +1,4 @@
+GET  200 hello, query is [name=zevic]
+POST 201 POST some data
+GET  404 no such path /missing
+refused: Io
