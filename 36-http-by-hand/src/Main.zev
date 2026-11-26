@@ -1,0 +1,102 @@
+// HTTP spoken by hand over TCP. The server and the client are in one program and talk over the loopback
+// interface: the server task reads a request (the first line, the header lines and a body with
+// Content-Length) and writes an answer; the client writes a request and reads the answer to the end.
+// The standard library has no HTTP module: for real programs use the packages Curl (client) and Httpd (server).
+// Modules: Zevic.Net, Zevic.Async, Zevic.Bytes, Zevic.Text.
+
+module Main
+
+import Zevic.Async
+import Zevic.Bytes
+import Zevic.Console
+import Zevic.Net
+import Zevic.Text
+
+fn reasonOf(status: I64) -> String {
+    if (status == 200) { return "OK" }
+    if (status == 201) { return "Created" }
+    "Not Found"
+}
+
+// What the server answers: a status and a body.
+fn route(method: String, target: String, body: String) -> (I64, String) {
+    let (path, query): (String, String) = match (Text.IndexOf(target, "?")) {
+        Some(i) => (target.Slice(0, i), target.Slice(i + 1, target.Len())),
+        None => (target, ""),
+    }
+    if (path == "/hello") {
+        return (200, "hello, query is [${query}]")
+    }
+    if (path == "/echo") {
+        return (201, "${method} ${body}")
+    }
+    (404, "no such path ${path}")
+}
+
+// Answers `count` requests, one after the other.
+fn serve(listener: Net.TcpListener, count: I64) {
+    for (i in 0..count) {
+        mut peer: Net.TcpStream = listener.Accept().Unwrap()
+        let first: String = peer.ReadLine().Unwrap().UnwrapOr("")
+        let parts: Array<String> = Text.Split(first, " ")
+        mut length: I64 = 0
+        loop {
+            let line: String = peer.ReadLine().Unwrap().UnwrapOr("")
+            if (line.IsEmpty()) {
+                break
+            }
+            if (Text.StartsWith(Text.ToLower(line), "content-length:")) {
+                length = Text.Trim(line.Slice(15, line.Len())).ToI64().UnwrapOr(0)
+            }
+        }
+        mut body: String = ""
+        if (length > 0) {
+            body = Bytes.ToStringLossy(peer.ReadExact(length).Unwrap())
+        }
+        let (status, text): (I64, String) = route(parts[0], parts[1], body)
+        let head: String = "HTTP/1.1 ${status} ${reasonOf(status)}\r\nContent-Length: ${text.Len()}\r\nConnection: close\r\n\r\n"
+        peer.WriteString(head + text).Unwrap()
+        peer.Shutdown()
+        peer.Close()
+    }
+}
+
+// Writes a request and reads the answer to the end: (status, body).
+fn request(port: I64, method: String, target: String, body: String) -> (I64, String) {
+    mut c: Net.TcpStream = Net.Connect("127.0.0.1", port).Unwrap()
+    c.WriteString("${method} ${target} HTTP/1.1\r\nHost: localhost\r\nContent-Length: ${body.Len()}\r\n\r\n${body}").Unwrap()
+    mut all: String = ""
+    loop {
+        let part: String = c.ReadString(65536).Unwrap()
+        if (part.IsEmpty()) {
+            break
+        }
+        all = all + part
+    }
+    c.Close()
+    let status: I64 = all.Slice(9, 12).ToI64().UnwrapOr(0)
+    let start: I64 = Text.IndexOf(all, "\r\n\r\n").UnwrapOr(all.Len())
+    (status, all.Slice(start + 4, all.Len()))
+}
+
+fn Main() {
+    mut listener: Net.TcpListener = Net.Listen("127.0.0.1", 0).Unwrap()
+    let port: I64 = listener.Port()
+    let server: Async.Task<Unit> = async { serve(listener, 3) }
+
+    let (s1, b1): (I64, String) = request(port, "GET", "/hello?name=zevic", "")
+    Console.Println("GET  ${s1} ${b1}")
+    let (s2, b2): (I64, String) = request(port, "POST", "/echo", "some data")
+    Console.Println("POST ${s2} ${b2}")
+    // An unknown path is a normal answer with status 404, not an error.
+    let (s3, b3): (I64, String) = request(port, "GET", "/missing", "")
+    Console.Println("GET  ${s3} ${b3}")
+
+    await server
+    listener.Close()
+    // Nobody listens on port 1: connecting is an error.
+    match (Net.Connect("127.0.0.1", 1)) {
+        Ok(_) => Console.Println("connected?"),
+        Err(e) => Console.Println("refused: ${e.Kind().ToString()}"),
+    }
+}

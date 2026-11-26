@@ -1,6 +1,6 @@
 // A tiny HTTP router without sockets: routes such as "GET /users/:id" are matched against a method and a
 // path, parameters are captured, and handlers return a status and a body. The routing logic can then be tested
-// with plain strings; hooking it up to Zevic.Http is one function (see example 36).
+// with plain strings; hooking it up to a server (the Httpd package, or the hand-made one of example 36) is one function.
 // Shows: closures stored in an array, path parsing, captured parameters in a Map, and 404 / 405 handling.
 // Library: Zevic.Console, Zevic.Text.
 
